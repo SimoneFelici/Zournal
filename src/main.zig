@@ -69,6 +69,7 @@ fn getRootDir(allocator: std.mem.Allocator) std.fs.Dir {
 }
 
 pub fn frame() !dvui.App.Result {
+    dvui.label(@src(), "{d:0>3.0} fps", .{dvui.FPS()}, .{ .gravity_x = 1.0 });
     switch (page) {
         .project_select => {
             var state = &page.project_select;
