@@ -41,7 +41,7 @@ pub const dvui_app: dvui.App = .{
     .config = .{
         .options = .{
             .size = .{ .w = 800.0, .h = 600.0 },
-            .min_size = .{ .w = 500.0, .h = 300.0 },
+            .min_size = .{ .w = 500.0, .h = 350.0 },
             .title = "Zournal",
         },
     },
@@ -76,60 +76,48 @@ pub fn frame() !dvui.App.Result {
 
             var outer = dvui.box(@src(), .{}, .{
                 .expand = .both,
-                .border = .{ .x = 1, .y = 1, .w = 1, .h = 1 },
-                .corner_radius = .{ .x = 3, .y = 3, .w = 3, .h = 3 },
-                .padding = .{ .x = 3, .y = 3, .w = 3, .h = 3 },
             });
             defer outer.deinit();
 
+            var main_box = dvui.box(@src(), .{ .dir = .vertical }, .{
+                .gravity_x = 0.5,
+                .gravity_y = 0.5,
+                .min_size_content = .{ .w = 450, .h = 0 },
+            });
+            defer main_box.deinit();
+
             {
-                var center_box = dvui.box(@src(), .{}, .{
-                    .gravity_x = 0.5,
-                    .gravity_y = 0.5,
+                var scroll = dvui.scrollArea(@src(), .{}, .{
+                    .expand = .horizontal,
+                    .max_size_content = .{ .w = 9999, .h = 250 },
                 });
-                defer center_box.deinit();
+                defer scroll.deinit();
 
-                {
-                    var list_box = dvui.box(@src(), .{}, .{
-                        .min_size_content = .{ .w = 400, .h = 450 },
-                        .border = .{ .x = 1, .y = 1, .w = 1, .h = 1 },
-                        .corner_radius = .{ .x = 3, .y = 3, .w = 3, .h = 3 },
-                        .padding = .{ .x = 3, .y = 3, .w = 3, .h = 3 },
-                    });
-                    defer list_box.deinit();
-
-                    var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
-                    defer scroll.deinit();
-
-                    for (state.projects.items, 0..) |name, i| {
-                        if (dvui.button(@src(), name, .{}, .{
-                            .id_extra = i,
-                            .expand = .horizontal,
-                            .min_size_content = .{ .h = 20 },
-                        })) {
-                            std.log.info("Selected: {s}", .{name});
-                        }
+                for (state.projects.items, 0..) |name, i| {
+                    if (dvui.button(@src(), name, .{}, .{
+                        .id_extra = i,
+                        .expand = .horizontal,
+                    })) {
+                        std.log.info("Selected: {s}", .{name});
                     }
                 }
-                {
-                    var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{
-                        .expand = .horizontal,
-                        .padding = .{ .y = 4 },
-                    });
-                    defer btn_row.deinit();
+            }
 
-                    if (dvui.button(@src(), "Import", .{}, .{})) {
-                        // TODO
-                    }
+            {
+                var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{
+                    .expand = .horizontal,
+                });
+                defer btn_row.deinit();
 
-                    // spacer che spinge i pulsanti ai lati
-                    var spacer = dvui.box(@src(), .{}, .{ .expand = .horizontal });
-                    spacer.deinit();
+                if (dvui.button(@src(), "Import", .{}, .{ .color_fill = .green })) {
+                    // TODO
+                }
 
-                    if (dvui.button(@src(), "New Project", .{}, .{})) {
-                        // TODO
-                        state.invalidate(app_allocator);
-                    }
+                var spacer = dvui.box(@src(), .{}, .{ .expand = .horizontal });
+                spacer.deinit();
+
+                if (dvui.button(@src(), "New Project", .{}, .{ .color_fill = .blue })) {
+                    // TODO
                 }
             }
         },
