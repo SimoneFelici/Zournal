@@ -34,7 +34,8 @@ const ProjectSelectState = struct {
     }
 };
 
-var app_allocator: std.mem.Allocator = std.heap.page_allocator;
+var gpa: std.heap.DebugAllocator(.{}) = .init;
+const app_allocator = gpa.allocator();
 var page: PageState = .{ .project_select = .{} };
 
 pub const dvui_app: dvui.App = .{
@@ -111,9 +112,12 @@ pub fn frame() !dvui.App.Result {
                 defer btn_row.deinit();
 
                 if (dvui.button(@src(), "Import", .{}, .{ .color_fill = .green })) {
-                    // TODO
+                    if (try dvui.native_dialogs.Native.folderSelect(app_allocator, .{ .title = "Import" })) |path| {
+                        defer app_allocator.free(path);
+                        std.log.info("Folder: {s}", .{path});
+                        // TODO
+                    }
                 }
-
                 var spacer = dvui.box(@src(), .{}, .{ .expand = .horizontal });
                 spacer.deinit();
 
