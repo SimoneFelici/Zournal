@@ -1,6 +1,8 @@
 const std = @import("std");
 const dvui = @import("dvui");
 const SDLBackend = @import("sdl-backend");
+const types = @import("types.zig");
+const fs = @import("fs_utils.zig");
 
 const PageState = union(enum) {
     project_select: ProjectSelectState,
@@ -8,26 +10,18 @@ const PageState = union(enum) {
 };
 
 const ProjectSelectState = struct {
-    projects: std.ArrayList([]const u8) = .{},
+    projects: std.ArrayList(types.ProjectEntry) = .{},
     loaded: bool = false,
 
     fn load(self: *ProjectSelectState, allocator: std.mem.Allocator) !void {
         if (self.loaded) return;
-        var root = getRootDir(allocator);
-        defer root.close();
-        var iter = root.iterate();
-        while (try iter.next()) |entry| {
-            if (entry.kind == .directory) {
-                const name = try allocator.dupe(u8, entry.name);
-                try self.projects.append(allocator, name);
-            }
-        }
+        self.projects = try fs.listProjects(allocator);
         self.loaded = true;
     }
 
     fn invalidate(self: *ProjectSelectState, allocator: std.mem.Allocator) void {
-        for (self.projects.items) |name| {
-            allocator.free(name);
+        for (self.projects.items) |entry| {
+            allocator.free(entry.name);
         }
         self.projects.clearRetainingCapacity();
         self.loaded = false;
@@ -56,25 +50,13 @@ pub const std_options: std.Options = .{
     .log_level = .info,
 };
 
-fn getRootDir(allocator: std.mem.Allocator) std.fs.Dir {
-    const app_data = std.fs.getAppDataDir(allocator, "Zournal") catch unreachable;
-    defer allocator.free(app_data);
-    return std.fs.cwd().openDir(app_data, .{ .iterate = true }) catch |err| switch (err) {
-        error.FileNotFound => {
-            std.fs.cwd().makePath(app_data) catch unreachable;
-            std.log.info("Created root folder {s}\n", .{app_data});
-            return std.fs.cwd().openDir(app_data, .{ .iterate = true }) catch unreachable;
-        },
-        else => unreachable,
-    };
-}
-
 pub fn frame() !dvui.App.Result {
     dvui.label(@src(), "{d:0>3.0} fps", .{dvui.FPS()}, .{ .gravity_x = 1.0 });
     switch (page) {
         .project_select => {
             var state = &page.project_select;
-            try state.load(app_allocator);
+            if (!state.loaded)
+                try state.load(app_allocator);
 
             var outer = dvui.box(@src(), .{}, .{
                 .expand = .both,
@@ -95,12 +77,12 @@ pub fn frame() !dvui.App.Result {
                 });
                 defer scroll.deinit();
 
-                for (state.projects.items, 0..) |name, i| {
-                    if (dvui.button(@src(), name, .{}, .{
+                for (state.projects.items, 0..) |entry, i| {
+                    if (dvui.button(@src(), entry.name, .{}, .{
                         .id_extra = i,
                         .expand = .horizontal,
                     })) {
-                        std.log.info("Selected: {s}", .{name});
+                        std.log.info("Selected: {s}", .{entry.name});
                     }
                 }
             }
@@ -115,9 +97,10 @@ pub fn frame() !dvui.App.Result {
                     if (try dvui.native_dialogs.Native.folderSelect(app_allocator, .{ .title = "Import" })) |path| {
                         defer app_allocator.free(path);
                         std.log.info("Folder: {s}", .{path});
-                        // TODO
+                        state.invalidate(app_allocator);
                     }
                 }
+
                 var spacer = dvui.box(@src(), .{}, .{ .expand = .horizontal });
                 spacer.deinit();
 
