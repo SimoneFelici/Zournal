@@ -13,18 +13,10 @@ const ProjectSelectState = struct {
     projects: std.ArrayList(types.ProjectEntry) = .{},
     loaded: bool = false,
 
-    fn load(self: *ProjectSelectState, allocator: std.mem.Allocator) !void {
+    fn fetchProjects(self: *ProjectSelectState, allocator: std.mem.Allocator) !void {
         if (self.loaded) return;
         self.projects = try fs.listProjects(allocator);
         self.loaded = true;
-    }
-
-    fn invalidate(self: *ProjectSelectState, allocator: std.mem.Allocator) void {
-        for (self.projects.items) |entry| {
-            allocator.free(entry.name);
-        }
-        self.projects.clearRetainingCapacity();
-        self.loaded = false;
     }
 };
 
@@ -56,7 +48,7 @@ pub fn frame() !dvui.App.Result {
         .project_select => {
             var state = &page.project_select;
             if (!state.loaded)
-                try state.load(app_allocator);
+                try state.fetchProjects(app_allocator);
 
             var outer = dvui.box(@src(), .{}, .{
                 .expand = .both,
@@ -96,8 +88,15 @@ pub fn frame() !dvui.App.Result {
                 if (dvui.button(@src(), "Import", .{}, .{ .color_fill = .green })) {
                     if (try dvui.native_dialogs.Native.folderSelect(app_allocator, .{ .title = "Import" })) |path| {
                         defer app_allocator.free(path);
-                        std.log.info("Folder: {s}", .{path});
-                        state.invalidate(app_allocator);
+                        std.log.info("Importing folder: {s}", .{path});
+                        fs.importFolder(app_allocator, path) catch |err| {
+                            std.log.err("Import failed: {}", .{err});
+                        };
+                        const name = app_allocator.dupe(u8, std.fs.path.basename(path)) catch unreachable;
+                        state.projects.insert(app_allocator, 0, .{
+                            .name = name,
+                            .mtime = std.time.nanoTimestamp(),
+                        }) catch unreachable;
                     }
                 }
 

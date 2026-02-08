@@ -35,3 +35,31 @@ pub fn listProjects(allocator: std.mem.Allocator) !std.ArrayList(types.ProjectEn
 fn compareByMtimeDesc(_: void, a: types.ProjectEntry, b: types.ProjectEntry) bool {
     return a.mtime > b.mtime;
 }
+
+// Thanks: @squeek502
+// https://ziggit.dev/t/recursively-copy-directory-using-std/1697/2
+
+pub fn importFolder(allocator: std.mem.Allocator, src_path: []const u8) !void {
+    var root = getRootDir(allocator);
+    defer root.close();
+
+    const basename = std.fs.path.basename(src_path);
+    var src_dir = try std.fs.cwd().openDir(src_path, .{ .iterate = true });
+    defer src_dir.close();
+
+    var dst_dir = try root.makeOpenPath(basename, .{});
+    defer dst_dir.close();
+
+    var walker = try src_dir.walk(allocator);
+    defer walker.deinit();
+
+    while (try walker.next()) |entry| {
+        switch (entry.kind) {
+            .file => try entry.dir.copyFile(entry.basename, dst_dir, entry.path, .{}),
+            .directory => try dst_dir.makePath(entry.path),
+            else => {},
+        }
+    }
+
+    std.log.info("Imported project: {s}", .{basename});
+}
