@@ -67,8 +67,7 @@ pub fn importFolder(allocator: std.mem.Allocator, src_path: []const u8) !void {
 pub fn createProject(allocator: std.mem.Allocator, name: []const u8) !void {
     var root = getRootDir(allocator);
     defer root.close();
-
-    try root.makePath(name);
-    // TODO:
+    try root.makeDir(name);
+    // TODO: inizializzare project.db con SQLite
     std.log.info("Created project: {s}", .{name});
 }
