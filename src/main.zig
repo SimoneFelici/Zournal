@@ -90,26 +90,23 @@ pub fn frame() !dvui.App.Result {
                 });
                 defer btn_row.deinit();
 
-                if (dvui.button(@src(), "Import", .{}, .{ .color_fill = .green })) {
-                    if (try dvui.native_dialogs.Native.folderSelect(app_allocator, .{ .title = "Import" })) |path| {
-                        defer app_allocator.free(path);
-                        std.log.info("Importing folder: {s}", .{path});
-                        fs.importFolder(app_allocator, path) catch |err| {
-                            std.log.err("Import failed: {}", .{err});
-                        };
-                        const name = app_allocator.dupe(u8, std.fs.path.basename(path)) catch unreachable;
-                        state.projects.insert(app_allocator, 0, .{
-                            .name = name,
-                            .mtime = std.time.nanoTimestamp(),
-                        }) catch unreachable;
-                    }
+                if (dvui.button(@src(), "Import", .{}, .{ .color_fill = .green, .gravity_x = 0 })) {
+                    // if (try dvui.native_dialogs.Native.folderSelect(app_allocator, .{ .title = "Import" })) |path| {
+                    //     defer app_allocator.free(path);
+                    //     std.log.info("Importing folder: {s}", .{path});
+                    //     fs.importFolder(app_allocator, path) catch |err| {
+                    //         std.log.err("Import failed: {}", .{err});
+                    //     };
+                    //     const name = app_allocator.dupe(u8, std.fs.path.basename(path)) catch unreachable;
+                    //     state.projects.insert(app_allocator, 0, .{
+                    //         .name = name,
+                    //         .mtime = std.time.nanoTimestamp(),
+                    //     }) catch unreachable;
+                    // }
                 }
 
-                var spacer = dvui.box(@src(), .{}, .{ .expand = .horizontal });
-                spacer.deinit();
-
                 if (!state.new_project_dialog) {
-                    if (dvui.button(@src(), "New Project", .{}, .{ .color_fill = .blue })) {
+                    if (dvui.button(@src(), "New Project", .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
                         state.new_project_dialog = true;
                     }
                 }
@@ -126,25 +123,30 @@ pub fn frame() !dvui.App.Result {
                     });
                     defer dialog_btns.deinit();
 
-                    if (dvui.button(@src(), "Create", .{}, .{ .color_fill = .blue })) {
+                    if (dvui.button(@src(), "Cancel", .{}, .{ .gravity_x = 0 })) {
+                        state.new_project_dialog = false;
+                    }
+
+                    if (dvui.button(@src(), "Create", .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
                         if (name.len > 0) {
                             fs.createProject(app_allocator, name) catch |err| {
-                                std.log.err("Create project failed: {}", .{err});
+                                if (err == error.PathAlreadyExists) {
+                                    dvui.dialog(@src(), .{}, .{
+                                        .title = "Error",
+                                        .message = "Project already exists.",
+                                    });
+                                } else {
+                                    std.log.err("Create project failed: {}", .{err});
+                                }
+                                return .ok;
                             };
                             const duped = app_allocator.dupe(u8, name) catch unreachable;
                             state.projects.insert(app_allocator, 0, .{
                                 .name = duped,
                                 .mtime = std.time.nanoTimestamp(),
                             }) catch unreachable;
+                            state.new_project_dialog = false;
                         }
-                        state.new_project_dialog = false;
-                    }
-
-                    var spacer2 = dvui.box(@src(), .{}, .{ .expand = .horizontal });
-                    spacer2.deinit();
-
-                    if (dvui.button(@src(), "Cancel", .{}, .{})) {
-                        state.new_project_dialog = false;
                     }
                 }
             }
