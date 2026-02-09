@@ -63,3 +63,12 @@ pub fn importFolder(allocator: std.mem.Allocator, src_path: []const u8) !void {
 
     std.log.info("Imported project: {s}", .{basename});
 }
+
+pub fn createProject(allocator: std.mem.Allocator, name: []const u8) !void {
+    var root = getRootDir(allocator);
+    defer root.close();
+
+    try root.makePath(name);
+    // TODO:
+    std.log.info("Created project: {s}", .{name});
+}

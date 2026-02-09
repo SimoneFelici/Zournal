@@ -1,6 +1,10 @@
 const std = @import("std");
 const dvui = @import("dvui");
 const SDLBackend = @import("sdl-backend");
+const c = @cImport({
+    @cInclude("sqlite3.h");
+});
+
 const types = @import("types.zig");
 const fs = @import("fs_utils.zig");
 
@@ -12,6 +16,7 @@ const PageState = union(enum) {
 const ProjectSelectState = struct {
     projects: std.ArrayList(types.ProjectEntry) = .{},
     loaded: bool = false,
+    new_project_dialog: bool = false,
 
     fn fetchProjects(self: *ProjectSelectState, allocator: std.mem.Allocator) !void {
         if (self.loaded) return;
@@ -103,8 +108,44 @@ pub fn frame() !dvui.App.Result {
                 var spacer = dvui.box(@src(), .{}, .{ .expand = .horizontal });
                 spacer.deinit();
 
-                if (dvui.button(@src(), "New Project", .{}, .{ .color_fill = .blue })) {
-                    // TODO
+                if (!state.new_project_dialog) {
+                    if (dvui.button(@src(), "New Project", .{}, .{ .color_fill = .blue })) {
+                        state.new_project_dialog = true;
+                    }
+                }
+            }
+
+            if (state.new_project_dialog) {
+                var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
+                const name = te.getText();
+                te.deinit();
+
+                {
+                    var dialog_btns = dvui.box(@src(), .{ .dir = .horizontal }, .{
+                        .expand = .horizontal,
+                    });
+                    defer dialog_btns.deinit();
+
+                    if (dvui.button(@src(), "Create", .{}, .{ .color_fill = .blue })) {
+                        if (name.len > 0) {
+                            fs.createProject(app_allocator, name) catch |err| {
+                                std.log.err("Create project failed: {}", .{err});
+                            };
+                            const duped = app_allocator.dupe(u8, name) catch unreachable;
+                            state.projects.insert(app_allocator, 0, .{
+                                .name = duped,
+                                .mtime = std.time.nanoTimestamp(),
+                            }) catch unreachable;
+                        }
+                        state.new_project_dialog = false;
+                    }
+
+                    var spacer2 = dvui.box(@src(), .{}, .{ .expand = .horizontal });
+                    spacer2.deinit();
+
+                    if (dvui.button(@src(), "Cancel", .{}, .{})) {
+                        state.new_project_dialog = false;
+                    }
                 }
             }
         },
