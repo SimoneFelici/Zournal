@@ -1,0 +1,85 @@
+CREATE TABLE IF NOT EXISTS "Cases" (
+	"id" INTEGER NOT NULL UNIQUE,
+	"c_name" TEXT NOT NULL UNIQUE,
+	"last_access" TIMESTAMP NOT NULL,
+	"notes" TEXT,
+	PRIMARY KEY("id")
+);
+
+CREATE TABLE IF NOT EXISTS "People" (
+	"id" INTEGER NOT NULL UNIQUE,
+	"p_name" TEXT NOT NULL,
+	"notes" TEXT,
+	PRIMARY KEY("id")
+);
+
+CREATE TABLE IF NOT EXISTS "People_Cases" (
+	"id" INTEGER NOT NULL UNIQUE,
+	"people_id" INTEGER NOT NULL,
+	"case_id" INTEGER NOT NULL,
+	PRIMARY KEY("id"),
+	FOREIGN KEY ("case_id") REFERENCES "Cases"("id")
+	ON UPDATE NO ACTION ON DELETE NO ACTION,
+	FOREIGN KEY ("people_id") REFERENCES "People"("id")
+	ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "People_Cases_index_0"
+ON "People_Cases" ("people_id", "case_id");
+CREATE TABLE IF NOT EXISTS "Relationships" (
+	"id" INTEGER NOT NULL UNIQUE,
+	"person1_id" INTEGER NOT NULL,
+	"person2_id" INTEGER NOT NULL,
+	"type_id" INTEGER NOT NULL,
+	"is_mutual" BOOLEAN NOT NULL,
+	PRIMARY KEY("id"),
+	FOREIGN KEY ("person2_id") REFERENCES "People"("id")
+	ON UPDATE NO ACTION ON DELETE NO ACTION,
+	FOREIGN KEY ("person1_id") REFERENCES "People"("id")
+	ON UPDATE NO ACTION ON DELETE NO ACTION,
+	FOREIGN KEY ("type_id") REFERENCES "Relationships_Types"("id")
+	ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE IF NOT EXISTS "Relationships_Types" (
+	"id" INTEGER NOT NULL UNIQUE,
+	"rel_name" TEXT NOT NULL UNIQUE,
+	PRIMARY KEY("id")
+);
+
+CREATE TABLE IF NOT EXISTS "Timeline_Events" (
+	"id" INTEGER NOT NULL UNIQUE,
+	"case_id" INTEGER NOT NULL,
+	"label" TEXT,
+	"content" TEXT NOT NULL,
+	"position_x" REAL NOT NULL,
+	"position_y" REAL NOT NULL,
+	PRIMARY KEY("id"),
+	FOREIGN KEY ("case_id") REFERENCES "Cases"("id")
+	ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE IF NOT EXISTS "Event_People" (
+	"id" INTEGER NOT NULL UNIQUE,
+	"event_id" INTEGER NOT NULL,
+	"person_id" INTEGER NOT NULL,
+	PRIMARY KEY("id"),
+	FOREIGN KEY ("event_id") REFERENCES "Timeline_Events"("id")
+	ON UPDATE NO ACTION ON DELETE NO ACTION,
+	FOREIGN KEY ("person_id") REFERENCES "People"("id")
+	ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Event_People_index_0"
+ON "Event_People" ("event_id", "person_id");
+CREATE TABLE IF NOT EXISTS "Event_Connections" (
+	"id" INTEGER NOT NULL UNIQUE,
+	"from_id" INTEGER NOT NULL,
+	"to_id" INTEGER NOT NULL,
+	"connection_type" TEXT,
+	PRIMARY KEY("id"),
+	FOREIGN KEY ("from_id") REFERENCES "Timeline_Events"("id")
+	ON UPDATE NO ACTION ON DELETE NO ACTION,
+	FOREIGN KEY ("to_id") REFERENCES "Timeline_Events"("id")
+	ON UPDATE NO ACTION ON DELETE NO ACTION
+);

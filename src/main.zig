@@ -50,6 +50,7 @@ pub const std_options: std.Options = .{
 pub fn frame() !dvui.App.Result {
     dvui.label(@src(), "{d:0>3.0} fps", .{dvui.FPS()}, .{ .gravity_x = 1.0 });
     switch (page) {
+        // Project Select
         .project_select => {
             var state = &page.project_select;
             if (!state.loaded)
@@ -67,6 +68,7 @@ pub fn frame() !dvui.App.Result {
             });
             defer main_box.deinit();
 
+            // Project List
             {
                 var scroll = dvui.scrollArea(@src(), .{}, .{
                     .expand = .horizontal,
@@ -84,6 +86,7 @@ pub fn frame() !dvui.App.Result {
                 }
             }
 
+            // Import and New
             {
                 var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{
                     .expand = .horizontal,
@@ -112,6 +115,7 @@ pub fn frame() !dvui.App.Result {
                 }
             }
 
+            // New Project
             if (state.new_project_dialog) {
                 var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
                 const name = te.getText();
