@@ -1,5 +1,8 @@
 const std = @import("std");
 const types = @import("types.zig");
+const c = @cImport({
+    @cInclude("sqlite3.h");
+});
 
 pub fn getRootDir(allocator: std.mem.Allocator) std.fs.Dir {
     const app_data = std.fs.getAppDataDir(allocator, "Zournal") catch unreachable;
@@ -56,6 +59,7 @@ pub fn importProject(allocator: std.mem.Allocator, src_path: []const u8) !void {
 
     const basename = std.fs.path.basename(src_path);
 
+    // TODO: Maybe check MIME type?
     if (!std.mem.endsWith(u8, basename, ".db")) return error.InvalidFileType;
 
     try std.fs.cwd().copyFile(src_path, dir, basename, .{});
@@ -70,9 +74,23 @@ pub fn createProject(allocator: std.mem.Allocator, name: []const u8) !void {
     const filename = try std.fmt.allocPrint(allocator, "{s}.db", .{name});
     defer allocator.free(filename);
 
-    // TEMP
     var file = try dir.createFile(filename, .{ .exclusive = true });
     file.close();
+
+    const full_path = try dir.realpathAlloc(allocator, filename);
+    defer allocator.free(full_path);
+
+    const schema = @embedFile("db/Zournal.sql");
+
+    var db: ?*c.sqlite3 = null;
+    if (c.sqlite3_open(full_path.ptr, &db) != c.SQLITE_OK) {
+        return error.DatabaseOpenFailed;
+    }
+    defer _ = c.sqlite3_close(db);
+
+    if (c.sqlite3_exec(db, schema.ptr, null, null, null) != c.SQLITE_OK) {
+        return error.SchemaInitFailed;
+    }
 
     std.log.info("Created project: {s}.db", .{name});
 }
