@@ -4,26 +4,44 @@ const types = @import("types.zig");
 pub fn getRootDir(allocator: std.mem.Allocator) std.fs.Dir {
     const app_data = std.fs.getAppDataDir(allocator, "Zournal") catch unreachable;
     defer allocator.free(app_data);
-    return std.fs.cwd().openDir(app_data, .{ .iterate = true }) catch |err| switch (err) {
+    return std.fs.cwd().openDir(app_data, .{}) catch |err| switch (err) {
         error.FileNotFound => {
             std.fs.cwd().makePath(app_data) catch unreachable;
             std.log.info("Created root folder {s}\n", .{app_data});
-            return std.fs.cwd().openDir(app_data, .{ .iterate = true }) catch unreachable;
+            return std.fs.cwd().openDir(app_data, .{}) catch unreachable;
         },
         else => unreachable,
     };
 }
 
-pub fn listProjects(allocator: std.mem.Allocator) !std.ArrayList(types.ProjectEntry) {
+pub fn getProjectsDir(allocator: std.mem.Allocator) std.fs.Dir {
     var root = getRootDir(allocator);
     defer root.close();
+    return root.openDir("projects", .{ .iterate = true }) catch |err| switch (err) {
+        error.FileNotFound => {
+            root.makeDir("projects") catch unreachable;
+            std.log.info("Created projects folder\n", .{});
+            return root.openDir("projects", .{ .iterate = true }) catch unreachable;
+        },
+        else => unreachable,
+    };
+}
+
+fn compareByMtimeDesc(_: void, a: types.ProjectEntry, b: types.ProjectEntry) bool {
+    return a.mtime > b.mtime;
+}
+
+pub fn listProjects(allocator: std.mem.Allocator) !std.ArrayList(types.ProjectEntry) {
+    var dir = getProjectsDir(allocator);
+    defer dir.close();
 
     var projects: std.ArrayList(types.ProjectEntry) = .{};
-    var iter = root.iterate();
+    var iter = dir.iterate();
     while (try iter.next()) |entry| {
-        if (entry.kind == .directory) {
-            const stat = root.statFile(entry.name) catch continue;
-            const name = try allocator.dupe(u8, entry.name);
+        if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".db")) {
+            const stat = dir.statFile(entry.name) catch continue;
+            const cut = entry.name[0 .. entry.name.len - 3];
+            const name = try allocator.dupe(u8, cut);
             try projects.append(allocator, .{ .name = name, .mtime = stat.mtime });
         }
     }
@@ -32,42 +50,29 @@ pub fn listProjects(allocator: std.mem.Allocator) !std.ArrayList(types.ProjectEn
     return projects;
 }
 
-fn compareByMtimeDesc(_: void, a: types.ProjectEntry, b: types.ProjectEntry) bool {
-    return a.mtime > b.mtime;
-}
-
-// Thanks: @squeek502
-// https://ziggit.dev/t/recursively-copy-directory-using-std/1697/2
-
-pub fn importFolder(allocator: std.mem.Allocator, src_path: []const u8) !void {
-    var root = getRootDir(allocator);
-    defer root.close();
+pub fn importProject(allocator: std.mem.Allocator, src_path: []const u8) !void {
+    var dir = getProjectsDir(allocator);
+    defer dir.close();
 
     const basename = std.fs.path.basename(src_path);
-    var src_dir = try std.fs.cwd().openDir(src_path, .{ .iterate = true });
-    defer src_dir.close();
 
-    var dst_dir = try root.makeOpenPath(basename, .{});
-    defer dst_dir.close();
+    if (!std.mem.endsWith(u8, basename, ".db")) return error.InvalidFileType;
 
-    var walker = try src_dir.walk(allocator);
-    defer walker.deinit();
-
-    while (try walker.next()) |entry| {
-        switch (entry.kind) {
-            .file => try entry.dir.copyFile(entry.basename, dst_dir, entry.path, .{}),
-            .directory => try dst_dir.makePath(entry.path),
-            else => {},
-        }
-    }
+    try std.fs.cwd().copyFile(src_path, dir, basename, .{});
 
     std.log.info("Imported project: {s}", .{basename});
 }
 
 pub fn createProject(allocator: std.mem.Allocator, name: []const u8) !void {
-    var root = getRootDir(allocator);
-    defer root.close();
-    try root.makeDir(name);
-    // TODO: inizializzare project.db con SQLite
-    std.log.info("Created project: {s}", .{name});
+    var dir = getProjectsDir(allocator);
+    defer dir.close();
+
+    const filename = try std.fmt.allocPrint(allocator, "{s}.db", .{name});
+    defer allocator.free(filename);
+
+    // TEMP
+    var file = try dir.createFile(filename, .{ .exclusive = true });
+    file.close();
+
+    std.log.info("Created project: {s}.db", .{name});
 }

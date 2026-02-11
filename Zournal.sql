@@ -1,7 +1,9 @@
+PRAGMA foreign_keys = ON;
+
 CREATE TABLE IF NOT EXISTS "Cases" (
 	"id" INTEGER NOT NULL UNIQUE,
 	"c_name" TEXT NOT NULL UNIQUE,
-	"last_access" TIMESTAMP NOT NULL,
+	"last_access" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now')),
 	"notes" TEXT,
 	PRIMARY KEY("id")
 );
@@ -13,39 +15,49 @@ CREATE TABLE IF NOT EXISTS "People" (
 	PRIMARY KEY("id")
 );
 
+CREATE TABLE IF NOT EXISTS "Relationships_Types" (
+	"id" INTEGER NOT NULL UNIQUE,
+	"rel_name" TEXT NOT NULL UNIQUE,
+	PRIMARY KEY("id")
+);
+
 CREATE TABLE IF NOT EXISTS "People_Cases" (
 	"id" INTEGER NOT NULL UNIQUE,
 	"people_id" INTEGER NOT NULL,
 	"case_id" INTEGER NOT NULL,
 	PRIMARY KEY("id"),
 	FOREIGN KEY ("case_id") REFERENCES "Cases"("id")
-	ON UPDATE NO ACTION ON DELETE NO ACTION,
+		ON UPDATE NO ACTION ON DELETE CASCADE,
 	FOREIGN KEY ("people_id") REFERENCES "People"("id")
-	ON UPDATE NO ACTION ON DELETE NO ACTION
+		ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "People_Cases_index_0"
 ON "People_Cases" ("people_id", "case_id");
+
 CREATE TABLE IF NOT EXISTS "Relationships" (
 	"id" INTEGER NOT NULL UNIQUE,
 	"person1_id" INTEGER NOT NULL,
 	"person2_id" INTEGER NOT NULL,
 	"type_id" INTEGER NOT NULL,
-	"is_mutual" BOOLEAN NOT NULL,
+	"is_mutual" INTEGER NOT NULL CHECK ("is_mutual" IN (0, 1)),
 	PRIMARY KEY("id"),
-	FOREIGN KEY ("person2_id") REFERENCES "People"("id")
-	ON UPDATE NO ACTION ON DELETE NO ACTION,
 	FOREIGN KEY ("person1_id") REFERENCES "People"("id")
-	ON UPDATE NO ACTION ON DELETE NO ACTION,
+		ON UPDATE NO ACTION ON DELETE CASCADE,
+	FOREIGN KEY ("person2_id") REFERENCES "People"("id")
+		ON UPDATE NO ACTION ON DELETE CASCADE,
 	FOREIGN KEY ("type_id") REFERENCES "Relationships_Types"("id")
-	ON UPDATE NO ACTION ON DELETE NO ACTION
+		ON UPDATE NO ACTION ON DELETE RESTRICT
 );
 
-CREATE TABLE IF NOT EXISTS "Relationships_Types" (
-	"id" INTEGER NOT NULL UNIQUE,
-	"rel_name" TEXT NOT NULL UNIQUE,
-	PRIMARY KEY("id")
-);
+CREATE UNIQUE INDEX IF NOT EXISTS "Relationships_unique"
+ON "Relationships" ("person1_id", "person2_id", "type_id");
+
+CREATE INDEX IF NOT EXISTS "Relationships_person1"
+ON "Relationships" ("person1_id");
+
+CREATE INDEX IF NOT EXISTS "Relationships_person2"
+ON "Relationships" ("person2_id");
 
 CREATE TABLE IF NOT EXISTS "Timeline_Events" (
 	"id" INTEGER NOT NULL UNIQUE,
@@ -56,8 +68,11 @@ CREATE TABLE IF NOT EXISTS "Timeline_Events" (
 	"position_y" REAL NOT NULL,
 	PRIMARY KEY("id"),
 	FOREIGN KEY ("case_id") REFERENCES "Cases"("id")
-	ON UPDATE NO ACTION ON DELETE NO ACTION
+		ON UPDATE NO ACTION ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS "Timeline_Events_case"
+ON "Timeline_Events" ("case_id");
 
 CREATE TABLE IF NOT EXISTS "Event_People" (
 	"id" INTEGER NOT NULL UNIQUE,
@@ -65,13 +80,14 @@ CREATE TABLE IF NOT EXISTS "Event_People" (
 	"person_id" INTEGER NOT NULL,
 	PRIMARY KEY("id"),
 	FOREIGN KEY ("event_id") REFERENCES "Timeline_Events"("id")
-	ON UPDATE NO ACTION ON DELETE NO ACTION,
+		ON UPDATE NO ACTION ON DELETE CASCADE,
 	FOREIGN KEY ("person_id") REFERENCES "People"("id")
-	ON UPDATE NO ACTION ON DELETE NO ACTION
+		ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "Event_People_index_0"
 ON "Event_People" ("event_id", "person_id");
+
 CREATE TABLE IF NOT EXISTS "Event_Connections" (
 	"id" INTEGER NOT NULL UNIQUE,
 	"from_id" INTEGER NOT NULL,
@@ -79,7 +95,16 @@ CREATE TABLE IF NOT EXISTS "Event_Connections" (
 	"connection_type" TEXT,
 	PRIMARY KEY("id"),
 	FOREIGN KEY ("from_id") REFERENCES "Timeline_Events"("id")
-	ON UPDATE NO ACTION ON DELETE NO ACTION,
+		ON UPDATE NO ACTION ON DELETE CASCADE,
 	FOREIGN KEY ("to_id") REFERENCES "Timeline_Events"("id")
-	ON UPDATE NO ACTION ON DELETE NO ACTION
+		ON UPDATE NO ACTION ON DELETE CASCADE
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Event_Connections_unique"
+ON "Event_Connections" ("from_id", "to_id");
+
+CREATE INDEX IF NOT EXISTS "Event_Connections_from"
+ON "Event_Connections" ("from_id");
+
+CREATE INDEX IF NOT EXISTS "Event_Connections_to"
+ON "Event_Connections" ("to_id");
