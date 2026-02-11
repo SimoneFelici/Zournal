@@ -93,26 +93,26 @@ pub fn frame() !dvui.App.Result {
                 });
                 defer btn_row.deinit();
 
-                if (dvui.button(@src(), "Import", .{}, .{ .color_fill = .green, .gravity_x = 0 })) {
-                    if (try dvui.native_dialogs.Native.openMultiple(app_allocator, .{ .title = "Import the .db files" })) |paths| {
-                        defer app_allocator.free(paths);
-                        for (paths) |path| {
-                            std.log.info("Importing project: {s}", .{path});
-                            fs.importProject(app_allocator, path) catch |err| {
-                                std.log.err("Import failed: {}", .{err});
-                                continue;
-                            };
-                            const stem = std.fs.path.stem(path);
-                            const name = app_allocator.dupe(u8, stem) catch unreachable;
-                            state.projects.insert(app_allocator, 0, .{
-                                .name = name,
-                                .mtime = std.time.nanoTimestamp(),
-                            }) catch unreachable;
+                if (!state.new_project_dialog) {
+                    if (dvui.button(@src(), "Import", .{}, .{ .color_fill = .green, .gravity_x = 0 })) {
+                        if (try dvui.native_dialogs.Native.openMultiple(app_allocator, .{ .title = "Import the .db files" })) |paths| {
+                            defer app_allocator.free(paths);
+                            for (paths) |path| {
+                                std.log.info("Importing project: {s}", .{path});
+                                fs.importProject(app_allocator, path) catch |err| {
+                                    std.log.err("Import failed: {}", .{err});
+                                    continue;
+                                };
+                                const stem = std.fs.path.stem(path);
+                                const name = app_allocator.dupe(u8, stem) catch unreachable;
+                                state.projects.insert(app_allocator, 0, .{
+                                    .name = name,
+                                    .mtime = std.time.nanoTimestamp(),
+                                }) catch unreachable;
+                            }
                         }
                     }
-                }
 
-                if (!state.new_project_dialog) {
                     if (dvui.button(@src(), "New Project", .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
                         state.new_project_dialog = true;
                     }
