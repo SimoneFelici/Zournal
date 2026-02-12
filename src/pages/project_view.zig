@@ -16,7 +16,7 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
         });
         defer sidebar.deinit();
         {
-            var tabs = dvui.tabs(@src(), .{ .dir = .vertical }, .{ .expand = .both, .gravity_y = 0 });
+            var tabs = dvui.tabs(@src(), .{ .dir = .vertical, .draw_focus = false }, .{ .expand = .both, .gravity_y = 0 });
             defer tabs.deinit();
             const tab_entries = [_]struct { tab: state.ProjectViewState.Tab, label: []const u8 }{
                 .{ .tab = .cases, .label = "Cases" },
@@ -35,7 +35,7 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
             }
 
             // Back
-            if (dvui.button(@src(), "Back", .{}, .{ .expand = .horizontal, .color_fill_hover = .red, .gravity_y = 1 })) {
+            if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = .red, .gravity_y = 1 })) {
                 page.* = .{ .project_select = .{} };
             }
         }
