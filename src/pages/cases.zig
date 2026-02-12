@@ -11,8 +11,9 @@ pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
         if (dvui.button(@src(), "New Case", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 1 })) {
             const count = s.db.countCases() catch 0;
             const case_name = std.fmt.allocPrint(allocator, "Case #{d}", .{count + 1}) catch unreachable;
+            defer allocator.free(case_name);
 
-            const id = s.db.createCase(allocator, case_name) catch |err| {
+            const id = s.db.createCase(case_name) catch |err| {
                 std.log.err("Create case failed: {}", .{err});
                 return;
             };
