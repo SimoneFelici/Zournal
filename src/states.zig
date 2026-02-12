@@ -4,7 +4,7 @@ const fs = @import("fs_utils.zig");
 
 pub const PageState = union(enum) {
     project_select: ProjectSelectState,
-    // project_view: ProjectViewState,
+    project_view: ProjectViewState,
 };
 
 pub const ProjectSelectState = struct {
