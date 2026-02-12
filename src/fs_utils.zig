@@ -1,8 +1,6 @@
 const std = @import("std");
 const types = @import("types.zig");
-const c = @cImport({
-    @cInclude("sqlite3.h");
-});
+const db = @import("db_utils.zig");
 
 pub fn getRootDir(allocator: std.mem.Allocator) std.fs.Dir {
     const app_data = std.fs.getAppDataDir(allocator, "Zournal") catch unreachable;
@@ -80,17 +78,7 @@ pub fn createProject(allocator: std.mem.Allocator, name: []const u8) !void {
     const full_path = try dir.realpathAlloc(allocator, filename);
     defer allocator.free(full_path);
 
-    const schema = @embedFile("db/Zournal.sql");
-
-    var db: ?*c.sqlite3 = null;
-    if (c.sqlite3_open(full_path.ptr, &db) != c.SQLITE_OK) {
-        return error.DatabaseOpenFailed;
-    }
-    defer _ = c.sqlite3_close(db);
-
-    if (c.sqlite3_exec(db, schema.ptr, null, null, null) != c.SQLITE_OK) {
-        return error.SchemaInitFailed;
-    }
+    try db.initDatabase(full_path);
 
     std.log.info("Created project: {s}.db", .{name});
 }
