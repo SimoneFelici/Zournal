@@ -78,7 +78,17 @@ pub fn createProject(allocator: std.mem.Allocator, name: []const u8) !void {
     const full_path = try dir.realpathAlloc(allocator, filename);
     defer allocator.free(full_path);
 
-    try db.initDatabase(full_path);
+    try db.initDatabase(allocator, full_path);
 
     std.log.info("Created project: {s}.db", .{name});
+}
+
+pub fn getProjectPath(allocator: std.mem.Allocator, name: []const u8) ![]u8 {
+    var dir = getProjectsDir(allocator);
+    defer dir.close();
+
+    const filename = try std.fmt.allocPrint(allocator, "{s}.db", .{name});
+    defer allocator.free(filename);
+
+    return try dir.realpathAlloc(allocator, filename);
 }

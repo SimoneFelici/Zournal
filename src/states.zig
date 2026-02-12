@@ -1,6 +1,7 @@
 const std = @import("std");
 const types = @import("types.zig");
 const fs = @import("fs_utils.zig");
+const db_utils = @import("db_utils.zig");
 
 pub const PageState = union(enum) {
     project_select: ProjectSelectState,
@@ -22,6 +23,9 @@ pub const ProjectSelectState = struct {
 pub const ProjectViewState = struct {
     name: []const u8,
     tab: Tab = .cases,
+    db: db_utils.Database,
+    cases: std.ArrayList(types.CaseEntry) = .{},
+    cases_loaded: bool = false,
 
     pub const Tab = enum {
         cases,
@@ -30,4 +34,9 @@ pub const ProjectViewState = struct {
         relationships,
         notes,
     };
+    pub fn loadCases(self: *ProjectViewState, allocator: std.mem.Allocator) !void {
+        if (self.cases_loaded) return;
+        self.cases = try self.db.listCases(allocator);
+        self.cases_loaded = true;
+    }
 };
