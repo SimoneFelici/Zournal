@@ -26,6 +26,7 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
         var scroll = dvui.scrollArea(@src(), .{}, .{
             .expand = .horizontal,
             .max_size_content = .{ .w = 9999, .h = 250 },
+            .corner_radius = dvui.Rect.all(3),
         });
         defer scroll.deinit();
 
@@ -33,9 +34,10 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
             if (dvui.button(@src(), entry.name, .{}, .{
                 .id_extra = i,
                 .expand = .horizontal,
+                .corner_radius = dvui.Rect.all(2),
             })) {
-                std.log.info("Selected: {s}", .{entry.name});
-                // TODO
+                page.* = .{ .project_view = .{ .name = entry.name } };
+                return;
             }
         }
     }

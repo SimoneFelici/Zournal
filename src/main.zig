@@ -2,7 +2,7 @@ const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("states.zig");
 const project_select = @import("pages/project_select.zig");
-// const project_view = @import("pages/project_view.zig");
+const project_view = @import("pages/project_view.zig");
 
 var gpa: std.heap.DebugAllocator(.{}) = .init;
 const app_allocator = gpa.allocator();
@@ -27,11 +27,11 @@ pub const std_options: std.Options = .{
 };
 
 pub fn frame() !dvui.App.Result {
-    dvui.label(@src(), "{d:0>3.0} fps", .{dvui.FPS()}, .{ .gravity_x = 1.0 });
+    // dvui.label(@src(), "{d:0>3.0} fps", .{dvui.FPS()}, .{ .gravity_x = 1.0 });
 
     switch (page) {
         .project_select => try project_select.render(&page, app_allocator),
-        // .project_view => try project_view.render(&page, app_allocator),
+        .project_view => try project_view.render(&page, app_allocator),
     }
 
     return .ok;
