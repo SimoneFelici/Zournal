@@ -57,12 +57,24 @@ pub fn importProject(allocator: std.mem.Allocator, src_path: []const u8) !void {
 
     const basename = std.fs.path.basename(src_path);
 
-    // TODO: Maybe check MIME type?
     if (!std.mem.endsWith(u8, basename, ".db")) return error.InvalidFileType;
 
     try std.fs.cwd().copyFile(src_path, dir, basename, .{});
 
     std.log.info("Imported project: {s}", .{basename});
+}
+
+pub fn getProjectPath(allocator: std.mem.Allocator, name: []const u8) ![:0]u8 {
+    var dir = getProjectsDir(allocator);
+    defer dir.close();
+
+    const filename = try std.fmt.allocPrint(allocator, "{s}.db", .{name});
+    defer allocator.free(filename);
+
+    const path = try dir.realpathAlloc(allocator, filename);
+    defer allocator.free(path);
+
+    return try allocator.dupeZ(u8, path);
 }
 
 pub fn createProject(allocator: std.mem.Allocator, name: []const u8) !void {
@@ -75,20 +87,10 @@ pub fn createProject(allocator: std.mem.Allocator, name: []const u8) !void {
     var file = try dir.createFile(filename, .{ .exclusive = true });
     file.close();
 
-    const full_path = try dir.realpathAlloc(allocator, filename);
-    defer allocator.free(full_path);
+    const path = try getProjectPath(allocator, name);
+    defer allocator.free(path);
 
-    try db.initDatabase(allocator, full_path);
+    try db.initDatabase(path);
 
     std.log.info("Created project: {s}.db", .{name});
-}
-
-pub fn getProjectPath(allocator: std.mem.Allocator, name: []const u8) ![]u8 {
-    var dir = getProjectsDir(allocator);
-    defer dir.close();
-
-    const filename = try std.fmt.allocPrint(allocator, "{s}.db", .{name});
-    defer allocator.free(filename);
-
-    return try dir.realpathAlloc(allocator, filename);
 }

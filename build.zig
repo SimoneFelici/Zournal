@@ -22,8 +22,6 @@ pub fn build(b: *std.Build) void {
     exe.linkLibC();
     exe.linkSystemLibrary("sqlite3");
     exe.root_module.addImport("zqlite", zqlite.module("zqlite"));
-    // exe.root_module.link_libc = true;
-    exe.root_module.linkSystemLibrary("sqlite3", .{});
 
     // DVui
     const dvui_dep = b.dependency("dvui", .{ .target = target, .optimize = optimize, .backend = .sdl3 });

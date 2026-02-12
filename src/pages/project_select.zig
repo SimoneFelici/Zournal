@@ -43,13 +43,12 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
                 };
                 defer allocator.free(db_path);
 
-                const database = db_utils.Database.open(allocator, db_path) catch |err| {
+                const database = db_utils.Database.open(db_path) catch |err| {
                     std.log.err("Failed to open DB: {}", .{err});
                     continue;
                 };
 
                 page.* = .{ .project_view = .{ .name = entry.name, .db = database } };
-
                 return;
             }
         }
