@@ -1,5 +1,3 @@
-PRAGMA foreign_keys = ON;
-
 CREATE TABLE IF NOT EXISTS "Cases" (
 	"id" INTEGER NOT NULL UNIQUE,
 	"c_name" TEXT NOT NULL UNIQUE,

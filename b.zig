@@ -37,7 +37,7 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
                 .expand = .horizontal,
                 .corner_radius = dvui.Rect.all(2),
             })) {
-                const db_path = fs.getProjectPath(allocator, entry.name) catch |err| {
+                const db_path = fs.getProjectDbPath(allocator, entry.name) catch |err| {
                     std.log.err("Failed to get DB path: {}", .{err});
                     continue;
                 };
@@ -49,7 +49,6 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
                 };
 
                 page.* = .{ .project_view = .{ .name = entry.name, .db = database } };
-
                 return;
             }
         }

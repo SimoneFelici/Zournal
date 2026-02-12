@@ -2,7 +2,6 @@ const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
 const fs = @import("../fs_utils.zig");
-const db_utils = @import("../db_utils.zig");
 
 pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
     var s = &page.project_select;
@@ -37,19 +36,7 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
                 .expand = .horizontal,
                 .corner_radius = dvui.Rect.all(2),
             })) {
-                const db_path = fs.getProjectPath(allocator, entry.name) catch |err| {
-                    std.log.err("Failed to get DB path: {}", .{err});
-                    continue;
-                };
-                defer allocator.free(db_path);
-
-                const database = db_utils.Database.open(allocator, db_path) catch |err| {
-                    std.log.err("Failed to open DB: {}", .{err});
-                    continue;
-                };
-
-                page.* = .{ .project_view = .{ .name = entry.name, .db = database } };
-
+                page.* = .{ .project_view = .{ .name = entry.name } };
                 return;
             }
         }

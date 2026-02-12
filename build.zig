@@ -14,7 +14,15 @@ pub fn build(b: *std.Build) void {
     });
 
     // Sqlite3
-    exe.root_module.link_libc = true;
+    const zqlite = b.dependency("zqlite", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
+    exe.linkLibC();
+    exe.linkSystemLibrary("sqlite3");
+    exe.root_module.addImport("zqlite", zqlite.module("zqlite"));
+    // exe.root_module.link_libc = true;
     exe.root_module.linkSystemLibrary("sqlite3", .{});
 
     // DVui
