@@ -31,7 +31,7 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
         defer scroll.deinit();
 
         for (s.projects.items, 0..) |entry, i| {
-            if (dvui.button(@src(), entry.name, .{}, .{
+            if (dvui.button(@src(), entry.name, .{ .draw_focus = false }, .{
                 .id_extra = i,
                 .expand = .horizontal,
                 .corner_radius = dvui.Rect.all(2),
@@ -49,7 +49,7 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
         });
         defer btn_row.deinit();
 
-        if (dvui.button(@src(), "Import", .{}, .{ .color_fill = .green, .gravity_x = 0 })) {
+        if (dvui.button(@src(), "Import", .{ .draw_focus = false }, .{ .color_fill = .green, .gravity_x = 0 })) {
             if (try dvui.native_dialogs.Native.openMultiple(allocator, .{ .title = "Import .db files" })) |paths| {
                 defer allocator.free(paths);
                 for (paths) |path| {
@@ -68,7 +68,7 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
         }
 
         if (!s.new_project_dialog) {
-            if (dvui.button(@src(), "New Project", .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
+            if (dvui.button(@src(), "New Project", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 1 })) {
                 s.new_project_dialog = true;
             }
         }
@@ -86,11 +86,11 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
             });
             defer dialog_btns.deinit();
 
-            if (dvui.button(@src(), "Cancel", .{}, .{ .gravity_x = 0 })) {
+            if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{ .gravity_x = 0 })) {
                 s.new_project_dialog = false;
             }
 
-            if (dvui.button(@src(), "Create", .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
+            if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 1 })) {
                 if (name.len > 0) {
                     fs.createProject(allocator, name) catch |err| {
                         if (err == error.PathAlreadyExists) {
