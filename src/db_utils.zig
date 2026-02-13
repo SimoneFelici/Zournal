@@ -37,14 +37,6 @@ pub const Database = struct {
         return cases;
     }
 
-    pub fn countCases(self: Database) !i64 {
-        if (self.conn.row("SELECT COUNT(*) FROM Cases", .{}) catch return error.QueryFailed) |row| {
-            defer row.deinit();
-            return row.int(0);
-        }
-        return 0;
-    }
-
     pub fn createCase(self: Database) !i64 {
         self.conn.exec("INSERT INTO Cases (c_name) VALUES ('')", .{}) catch return error.InsertFailed;
         return self.conn.lastInsertedRowId();
