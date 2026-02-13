@@ -8,7 +8,7 @@ pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
 
     // New case
     {
-        if (dvui.button(@src(), "New Case", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 1 })) {
+        if (dvui.buttonIcon(@src(), "New Case", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
             const id = s.db.createCase() catch |err| {
                 std.log.err("Create case failed: {}", .{err});
                 return;

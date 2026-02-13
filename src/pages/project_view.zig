@@ -33,7 +33,11 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
             for (tab_entries) |entry| {
                 var tab = tabs.addTab(s.tab == entry.tab, .{ .expand = .horizontal });
                 defer tab.deinit();
-                dvui.labelNoFmt(@src(), entry.label, .{}, .{});
+                if (entry.tab == .cases and s.cases_loaded) {
+                    dvui.label(@src(), "Cases ({d})", .{s.cases.items.len}, .{});
+                } else {
+                    dvui.labelNoFmt(@src(), entry.label, .{}, .{});
+                }
                 if (tab.clicked()) {
                     s.tab = entry.tab;
                 }
