@@ -45,8 +45,8 @@ pub const Database = struct {
         return 0;
     }
 
-    pub fn createCase(self: Database, name: []const u8) !i64 {
-        self.conn.exec("INSERT INTO Cases (c_name) VALUES (?1)", .{name}) catch return error.InsertFailed;
+    pub fn createCase(self: Database) !i64 {
+        self.conn.exec("INSERT INTO Cases (c_name) VALUES ('')", .{}) catch return error.InsertFailed;
         return self.conn.lastInsertedRowId();
     }
 };
