@@ -2,6 +2,8 @@ const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
 
+const COLS = 4;
+
 pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
     if (!s.cases_loaded)
         try s.loadCases(allocator);
@@ -18,20 +20,35 @@ pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
         }
     }
 
-    // Case list
+    // Case wall
     {
         var scroll = dvui.scrollArea(@src(), .{}, .{
             .expand = .both,
         });
         defer scroll.deinit();
 
-        for (s.cases.items, 0..) |case_entry, i| {
-            if (dvui.button(@src(), case_entry.name, .{ .draw_focus = false }, .{
+        var i: usize = 0;
+        while (i < s.cases.items.len) {
+            var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
                 .id_extra = i,
                 .expand = .horizontal,
-            })) {
-                // TODO
-                std.log.info("Selected case: {s}", .{case_entry.name});
+            });
+            defer row.deinit();
+
+            var col: usize = 0;
+            while (col < COLS and i < s.cases.items.len) : ({
+                col += 1;
+                i += 1;
+            }) {
+                const case_entry = s.cases.items[i];
+                if (dvui.button(@src(), case_entry.name, .{ .draw_focus = false }, .{
+                    .id_extra = i,
+                    .expand = .horizontal,
+                    .min_size_content = .{ .w = 120, .h = 80 },
+                    .corner_radius = dvui.Rect.all(3),
+                })) {
+                    std.log.info("Selected case: {s}", .{case_entry.name});
+                }
             }
         }
     }
