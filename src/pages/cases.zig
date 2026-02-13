@@ -9,17 +9,12 @@ pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
     // New case
     {
         if (dvui.button(@src(), "New Case", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 1 })) {
-            const count = s.db.countCases() catch 0;
-            const case_name = std.fmt.allocPrint(allocator, "Case #{d}", .{count + 1}) catch unreachable;
-            defer allocator.free(case_name);
-
-            const id = s.db.createCase(case_name) catch |err| {
+            const id = s.db.createCase() catch |err| {
                 std.log.err("Create case failed: {}", .{err});
                 return;
             };
-
-            const duped = allocator.dupe(u8, case_name) catch unreachable;
-            s.cases.insert(allocator, 0, .{ .id = id, .name = duped }) catch unreachable;
+            const name = std.fmt.allocPrint(allocator, "Case #{d}", .{id}) catch unreachable;
+            s.cases.insert(allocator, 0, .{ .id = id, .name = name }) catch unreachable;
         }
     }
 

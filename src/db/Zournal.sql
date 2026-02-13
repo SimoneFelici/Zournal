@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS "Cases" (
 	"id" INTEGER NOT NULL UNIQUE,
-	"c_name" TEXT NOT NULL UNIQUE,
+	"c_name" TEXT NOT NULL UNIQUE DEFAULT '',
 	"last_access" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now')),
 	"notes" TEXT,
 	PRIMARY KEY("id")
@@ -106,3 +106,10 @@ ON "Event_Connections" ("from_id");
 
 CREATE INDEX IF NOT EXISTS "Event_Connections_to"
 ON "Event_Connections" ("to_id");
+
+CREATE TRIGGER IF NOT EXISTS "auto_case_name"
+AFTER INSERT ON "Cases"
+WHEN NEW.c_name = ''
+BEGIN
+    UPDATE Cases SET c_name = 'Case #' || NEW.id WHERE id = NEW.id;
+END;
