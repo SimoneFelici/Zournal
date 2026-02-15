@@ -26,6 +26,9 @@ pub const ProjectViewState = struct {
     db: db_utils.Database,
     cases: std.ArrayList(types.CaseEntry) = .{},
     cases_loaded: bool = false,
+    people: std.ArrayList(types.PersonEntry) = .{},
+    people_loaded: bool = false,
+    new_person_dialog: bool = false,
 
     pub const Tab = enum {
         cases,
@@ -34,9 +37,16 @@ pub const ProjectViewState = struct {
         relationships,
         notes,
     };
+
     pub fn loadCases(self: *ProjectViewState, allocator: std.mem.Allocator) !void {
         if (self.cases_loaded) return;
         self.cases = try self.db.listCases(allocator);
         self.cases_loaded = true;
+    }
+
+    pub fn loadPeople(self: *ProjectViewState, allocator: std.mem.Allocator) !void {
+        if (self.people_loaded) return;
+        self.people = try self.db.listPeople(allocator);
+        self.people_loaded = true;
     }
 };

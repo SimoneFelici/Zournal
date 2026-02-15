@@ -9,3 +9,8 @@ pub const CaseEntry = struct {
     id: i64,
     name: []const u8,
 };
+
+pub const PersonEntry = struct {
+    id: i64,
+    name: []const u8,
+};
