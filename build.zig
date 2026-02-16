@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     exe.addCSourceFile(.{
-        .file = b.path("lib/sqlite3.c"),
+        .file = zqlite.path("lib/sqlite3.c"),
         .flags = &[_][]const u8{
             "-DSQLITE_DQS=0",
             "-DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1",
