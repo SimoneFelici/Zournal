@@ -3,6 +3,7 @@ const dvui = @import("dvui");
 const state = @import("../states.zig");
 const cases = @import("cases.zig");
 const people = @import("people.zig");
+const notes = @import("notes.zig");
 
 pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
     var s = &page.project_view;
@@ -38,6 +39,8 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
                     dvui.label(@src(), "Cases ({d})", .{s.cases.items.len}, .{});
                 } else if (entry.tab == .people and s.people_loaded) {
                     dvui.label(@src(), "People ({d})", .{s.people.items.len}, .{});
+                } else if (entry.tab == .notes and s.notes_loaded) {
+                    dvui.label(@src(), "Notes ({d})", .{s.notes.items.len}, .{});
                 } else {
                     dvui.labelNoFmt(@src(), entry.label, .{}, .{});
                 }
@@ -68,9 +71,9 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
         switch (s.tab) {
             .cases => try cases.render(s, allocator),
             .people => try people.render(s, allocator),
+            .notes => try notes.render(s, allocator),
             .timeline => dvui.label(@src(), "Timeline", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
             .relationships => dvui.label(@src(), "Relationships", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
-            .notes => dvui.label(@src(), "Notes", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
         }
     }
 }

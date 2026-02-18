@@ -3,6 +3,7 @@ const dvui = @import("dvui");
 const state = @import("states.zig");
 const project_select = @import("pages/project_select.zig");
 const project_view = @import("pages/project_view.zig");
+const SDLBackend = @import("sdl-backend");
 
 var gpa: std.heap.DebugAllocator(.{}) = .init;
 const app_allocator = gpa.allocator();
@@ -16,9 +17,15 @@ pub const dvui_app: dvui.App = .{
             .title = "Zournal",
         },
     },
-    .frameFn = frame,
-    .initFn = null,
+    .frameFn = AppFrame,
+    .initFn = AppInit,
 };
+
+fn AppInit(win: *dvui.Window) !void {
+    const sdl_backend: *SDLBackend = @ptrCast(@alignCast(win.backend.impl));
+    _ = SDLBackend.c.SDL_MaximizeWindow(sdl_backend.window);
+}
+
 pub const main = dvui.App.main;
 pub const panic = dvui.App.panic;
 pub const std_options: std.Options = .{
@@ -26,7 +33,7 @@ pub const std_options: std.Options = .{
     .log_level = .info,
 };
 
-pub fn frame() !dvui.App.Result {
+pub fn AppFrame() !dvui.App.Result {
     // dvui.label(@src(), "{d:0>3.0} fps", .{dvui.FPS()}, .{ .gravity_x = 1.0 });
 
     switch (page) {
