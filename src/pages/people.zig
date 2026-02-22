@@ -1,41 +1,38 @@
 const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
+const types = @import("../types.zig");
 
 const COLS = 6;
 const AVATAR_SIZE: f32 = 60;
 
-fn initials(name: []const u8, buf: *[2]u8) []const u8 {
-    var it = std.mem.splitScalar(u8, name, ' ');
-
+fn computeInitials(entry: *types.PersonEntry) void {
+    var it = std.mem.splitScalar(u8, entry.name, ' ');
     const first = it.next();
     const second = it.next();
-
-    var len: usize = 0;
-
+    entry.initials_len = 0;
     if (first) |f| {
         if (f.len > 0) {
-            buf[len] = std.ascii.toUpper(f[0]);
-            len += 1;
+            entry.initials[entry.initials_len] = std.ascii.toUpper(f[0]);
+            entry.initials_len += 1;
         }
-
         if (second) |s| {
             if (s.len > 0) {
-                buf[len] = std.ascii.toUpper(s[0]);
-                len += 1;
+                entry.initials[entry.initials_len] = std.ascii.toUpper(s[0]);
+                entry.initials_len += 1;
             }
         } else if (f.len > 1) {
-            buf[len] = std.ascii.toUpper(f[1]);
-            len += 1;
+            entry.initials[entry.initials_len] = std.ascii.toUpper(f[1]);
+            entry.initials_len += 1;
         }
     }
-
-    return buf[0..len];
 }
 
 pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
-    if (!s.people_loaded)
+    if (!s.people_loaded) {
         try s.loadPeople(allocator);
+        for (s.people.items) |*p| computeInitials(p);
+    }
 
     {
         if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
@@ -64,7 +61,9 @@ pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
                     return;
                 };
                 const duped = allocator.dupe(u8, name) catch unreachable;
-                s.people.append(allocator, .{ .id = id, .name = duped }) catch unreachable;
+                var new_person = types.PersonEntry{ .id = id, .name = duped };
+                computeInitials(&new_person);
+                s.people.append(allocator, new_person) catch unreachable;
                 s.new_person_dialog = false;
             }
         }
@@ -101,8 +100,7 @@ pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
                         });
                         defer card.deinit();
 
-                        var avatar_buf: [2]u8 = undefined;
-                        const avatar = initials(person.name, &avatar_buf);
+                        const avatar = person.initials[0..person.initials_len];
 
                         if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{
                             .id_extra = idx,
