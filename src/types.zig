@@ -13,6 +13,8 @@ pub const CaseEntry = struct {
 pub const PersonEntry = struct {
     id: i64,
     name: []const u8,
+    initials: [2]u8 = .{ 0, 0 },
+    initials_len: u2 = 0,
 };
 
 pub const NoteEntry = struct {

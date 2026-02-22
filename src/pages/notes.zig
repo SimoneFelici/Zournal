@@ -90,7 +90,7 @@ pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
         }
     }
 
-    // Floating window for open note
+    // Open note
     if (s.open_note_id) |note_id| {
         const note_idx = for (s.notes.items, 0..) |n, idx| {
             if (n.id == note_id) break idx;
@@ -110,9 +110,6 @@ pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
                 const note = s.notes.items[idx];
                 s.db.updateNoteContent(note.id, note.content) catch |err| {
                     std.log.err("Save note failed: {}", .{err});
-                };
-                s.db.syncNoteMentions(allocator, note.id, note.content) catch |err| {
-                    std.log.err("Sync mentions failed: {}", .{err});
                 };
                 s.open_note_id = null;
                 return;
@@ -149,9 +146,6 @@ pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
                     const note = s.notes.items[idx];
                     s.db.updateNoteContent(note.id, note.content) catch |err| {
                         std.log.err("Save note failed: {}", .{err});
-                    };
-                    s.db.syncNoteMentions(allocator, note.id, note.content) catch |err| {
-                        std.log.err("Sync mentions failed: {}", .{err});
                     };
                 }
 

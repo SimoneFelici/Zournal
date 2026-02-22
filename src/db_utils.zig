@@ -7,7 +7,6 @@ const schema = @embedFile("db/Zournal.sql");
 pub const Database = struct {
     conn: zqlite.Conn,
 
-    // Project
     pub fn open(path: [:0]const u8) !Database {
         const conn = zqlite.open(path, zqlite.OpenFlags.Create | zqlite.OpenFlags.EXResCode) catch return error.DatabaseOpenFailed;
         conn.execNoArgs("PRAGMA foreign_keys = ON") catch return error.DatabaseConfigFailed;
@@ -107,42 +106,6 @@ pub const Database = struct {
 
     pub fn deleteNote(self: Database, id: i64) !void {
         self.conn.exec("DELETE FROM Notes WHERE id = ?", .{id}) catch return error.DeleteFailed;
-    }
-
-    pub fn linkNotePerson(self: Database, note_id: i64, person_id: i64) !void {
-        self.conn.exec("INSERT OR IGNORE INTO Note_People (note_id, person_id) VALUES (?, ?)", .{ note_id, person_id }) catch return error.InsertFailed;
-    }
-
-    pub fn unlinkAllNotePeople(self: Database, note_id: i64) !void {
-        self.conn.exec("DELETE FROM Note_People WHERE note_id = ?", .{note_id}) catch return error.DeleteFailed;
-    }
-
-    pub fn syncNoteMentions(self: Database, allocator: std.mem.Allocator, note_id: i64, content: []const u8) !void {
-        self.unlinkAllNotePeople(note_id) catch return;
-
-        var people = self.listPeople(allocator) catch return;
-        defer {
-            for (people.items) |p| allocator.free(p.name);
-            people.deinit(allocator);
-        }
-
-        // Scan content for @mentions
-        var i: usize = 0;
-        while (i < content.len) {
-            if (content[i] == '@') {
-                const rest = content[i + 1 ..];
-                // Try to match against known people names
-                for (people.items) |person| {
-                    if (rest.len >= person.name.len and
-                        std.ascii.eqlIgnoreCase(rest[0..person.name.len], person.name))
-                    {
-                        self.linkNotePerson(note_id, person.id) catch {};
-                        break;
-                    }
-                }
-            }
-            i += 1;
-        }
     }
 };
 
