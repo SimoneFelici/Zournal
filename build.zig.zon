@@ -6,12 +6,16 @@
 
     .dependencies = .{
         .dvui = .{
-            .url = "git+https://github.com/david-vanderson/dvui?ref=zig16-dev#4098f724ee70ae67053dd9fc91921654443984aa",
-            .hash = "dvui-0.4.0-dev-AQFJmaxm2wCU9WVPxqXoIDL9bvaoIiJCEgbFmuFADXZT",
+            .url = "git+https://github.com/david-vanderson/dvui?ref=zig16-dev#49e8443c038cc5a82dbf57305322132c0a61d4b6",
+            .hash = "dvui-0.5.0-dev-AQFJmTgB3QCriBRzSQGPpw44zDiTaQ8hNnrxsrSxSQti",
         },
         .zqlite = .{
-            .url = "git+https://github.com/andrewrk/zqlite.zig?ref=master#205dcc49a212b27e5a78868cda09135d0945fc7a",
-            .hash = "zqlite-0.0.1-RWLaY36cmAC0Sznz0iy75CjxMjGCkUjZzIa-Si2pitGe",
+            .url = "git+https://github.com/karlseguin/zqlite.zig?ref=master#23e7ca714326111348a1b124ea3918efd3afffc3",
+            .hash = "zqlite-0.0.1-RWLaY2UvnAA4CCI5IMmkj5EsRJ3a5EIk_JELFR5Pjxzk",
+        },
+        .known_folders = .{
+            .url = "git+https://github.com/ziglibs/known-folders#b242672a6e94982aadb00c1f8ef9c9e9a8abcc3f",
+            .hash = "known_folders-0.0.0-Fy-PJqXKAAAbtJ18aGk-fkcZ4dFp_VFXgPENA6ZcLukl",
         },
     },
 

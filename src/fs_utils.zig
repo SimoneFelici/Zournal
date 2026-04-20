@@ -1,10 +1,15 @@
 const std = @import("std");
 const types = @import("types.zig");
 const db = @import("db_utils.zig");
+const known_folders = @import("known-folders");
 
-pub fn getRootDir(allocator: std.mem.Allocator) std.fs.Dir {
-    const app_data = std.fs.getAppDataDir(allocator, "Zournal") catch unreachable;
+pub fn getRootDir(allocator: std.mem.Allocator) std.Io.Dir {
+    const data_dir = (known_folders.getPath(allocator, .data) catch unreachable);
+    defer allocator.free(data_dir);
+
+    const app_data = std.fs.path.join(allocator, &.{ data_dir, "Zournal" }) catch unreachable;
     defer allocator.free(app_data);
+
     return std.fs.cwd().openDir(app_data, .{}) catch |err| switch (err) {
         error.FileNotFound => {
             std.fs.cwd().makePath(app_data) catch unreachable;
@@ -15,7 +20,7 @@ pub fn getRootDir(allocator: std.mem.Allocator) std.fs.Dir {
     };
 }
 
-pub fn getProjectsDir(allocator: std.mem.Allocator) std.fs.Dir {
+pub fn getProjectsDir(allocator: std.mem.Allocator) std.Io.Dir {
     var root = getRootDir(allocator);
     defer root.close();
     return root.openDir("projects", .{ .iterate = true }) catch |err| switch (err) {
@@ -36,7 +41,7 @@ pub fn listProjects(allocator: std.mem.Allocator) !std.ArrayList(types.ProjectEn
     var dir = getProjectsDir(allocator);
     defer dir.close();
 
-    var projects: std.ArrayList(types.ProjectEntry) = .{};
+    var projects: std.ArrayList(types.ProjectEntry) = .empty;
     var iter = dir.iterate();
     while (try iter.next()) |entry| {
         if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".db")) {
@@ -59,7 +64,7 @@ pub fn importProject(allocator: std.mem.Allocator, src_path: []const u8) !void {
 
     if (!std.mem.endsWith(u8, basename, ".db")) return error.InvalidFileType;
 
-    try std.fs.cwd().copyFile(src_path, dir, basename, .{});
+    try std.Io.Dir.copyFile(src_path, dir, basename, .{});
 
     std.log.info("Imported project: {s}", .{basename});
 }

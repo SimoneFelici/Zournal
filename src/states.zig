@@ -9,7 +9,7 @@ pub const PageState = union(enum) {
 };
 
 pub const ProjectSelectState = struct {
-    projects: std.ArrayList(types.ProjectEntry) = .{},
+    projects: std.ArrayList(types.ProjectEntry) = .empty,
     loaded: bool = false,
     new_project_dialog: bool = false,
 
