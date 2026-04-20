@@ -1,4 +1,5 @@
 const std = @import("std");
+const AppContext = @import("context.zig");
 const dvui = @import("dvui");
 const state = @import("states.zig");
 const project_select = @import("pages/project_select.zig");
@@ -7,7 +8,9 @@ const SDLBackend = @import("sdl-backend");
 
 var gpa: std.heap.DebugAllocator(.{}) = .init;
 const app_allocator = gpa.allocator();
+
 var page: state.PageState = .{ .project_select = .{} };
+var app_ctx: AppContext = undefined;
 
 pub const dvui_app: dvui.App = .{
     .config = .{
@@ -24,6 +27,11 @@ pub const dvui_app: dvui.App = .{
 fn AppInit(win: *dvui.Window) !void {
     const sdl_backend: *SDLBackend = @ptrCast(@alignCast(win.backend.impl));
     _ = SDLBackend.c.SDL_MaximizeWindow(sdl_backend.window);
+
+    app_ctx = .{
+        .allocator = app_allocator,
+        .io = std.Io.initDefault(),
+    };
 }
 
 pub const main = dvui.App.main;
@@ -37,8 +45,8 @@ pub fn AppFrame() !dvui.App.Result {
     // dvui.label(@src(), "{d:0>3.0} fps", .{dvui.FPS()}, .{ .gravity_x = 1.0 });
 
     switch (page) {
-        .project_select => try project_select.render(&page, app_allocator),
-        .project_view => try project_view.render(&page, app_allocator),
+        .project_select => try project_select.render(&page, app_ctx.allocator),
+        .project_view => try project_view.render(&page, app_ctx.allocator),
     }
 
     return .ok;
