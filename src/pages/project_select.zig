@@ -1,14 +1,17 @@
 const std = @import("std");
 const dvui = @import("dvui");
+const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const fs = @import("../fs_utils.zig");
 const db_utils = @import("../db_utils.zig");
 
-pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
+pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_select;
+    const allocator = ctx.allocator;
+    const io = ctx.io;
 
     if (!s.loaded)
-        try s.fetchProjects(allocator);
+        try s.fetchProjects(ctx);
 
     var outer = dvui.box(@src(), .{}, .{
         .expand = .both,
@@ -37,7 +40,7 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
                 .expand = .horizontal,
                 .corner_radius = dvui.Rect.all(2),
             })) {
-                const db_path = fs.getProjectPath(allocator, entry.name) catch |err| {
+                const db_path = fs.getProjectPath(ctx, entry.name) catch |err| {
                     std.log.err("Failed to get DB path: {}", .{err});
                     continue;
                 };
@@ -65,15 +68,15 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
             if (try dvui.native_dialogs.Native.openMultiple(allocator, .{ .title = "Import .db files" })) |paths| {
                 defer allocator.free(paths);
                 for (paths) |path| {
-                    fs.importProject(allocator, path) catch |err| {
+                    fs.importProject(ctx, path) catch |err| {
                         std.log.err("Import failed: {}", .{err});
                         continue;
                     };
-                    const stem = std.fs.path.stem(path);
+                    const stem = std.Io.Dir.path.stem(path);
                     const name = allocator.dupe(u8, stem) catch unreachable;
                     s.projects.insert(allocator, 0, .{
                         .name = name,
-                        .mtime = std.time.nanoTimestamp(),
+                        .mtime = std.Io.Clock.now(.real, io),
                     }) catch unreachable;
                 }
             }
@@ -104,7 +107,7 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
 
             if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 1 })) {
                 if (name.len > 0) {
-                    fs.createProject(allocator, name) catch |err| {
+                    fs.createProject(ctx, name) catch |err| {
                         if (err == error.PathAlreadyExists) {
                             dvui.dialog(@src(), .{}, .{
                                 .title = "Error",
@@ -118,8 +121,9 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
                     const duped = allocator.dupe(u8, name) catch unreachable;
                     s.projects.insert(allocator, 0, .{
                         .name = duped,
-                        .mtime = std.time.nanoTimestamp(),
+                        .mtime = std.Io.Clock.now(.real, io),
                     }) catch unreachable;
+
                     s.new_project_dialog = false;
                 }
             }

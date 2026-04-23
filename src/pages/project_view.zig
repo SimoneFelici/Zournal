@@ -1,11 +1,12 @@
 const std = @import("std");
 const dvui = @import("dvui");
+const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const cases = @import("cases.zig");
 const people = @import("people.zig");
 const notes = @import("notes.zig");
 
-pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
+pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_view;
 
     var outer = dvui.box(@src(), .{ .dir = .horizontal }, .{
@@ -69,9 +70,9 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
         defer content.deinit();
 
         switch (s.tab) {
-            .cases => try cases.render(s, allocator),
-            .people => try people.render(s, allocator),
-            .notes => try notes.render(s, allocator),
+            .cases => try cases.render(ctx, page),
+            .people => try people.render(ctx, page),
+            .notes => try notes.render(ctx, page),
             .timeline => dvui.label(@src(), "Timeline", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
             .relationships => dvui.label(@src(), "Relationships", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
         }
