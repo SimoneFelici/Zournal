@@ -1,6 +1,6 @@
 const std = @import("std");
 const dvui = @import("dvui");
-const state = @import("../states.zig");
+const AppContext = @import("../context.zig").AppContext;
 const types = @import("../types.zig");
 
 const COLS = 6;
@@ -28,7 +28,10 @@ fn computeInitials(entry: *types.PersonEntry) void {
     }
 }
 
-pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
+pub fn render(ctx: *AppContext) !void {
+    var s = &ctx.page.project_view;
+    const allocator = ctx.allocator;
+
     if (!s.people_loaded) {
         try s.loadPeople(allocator);
         for (s.people.items) |*p| computeInitials(p);
