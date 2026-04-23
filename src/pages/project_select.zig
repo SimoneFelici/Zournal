@@ -1,17 +1,17 @@
 const std = @import("std");
 const dvui = @import("dvui");
 const AppContext = @import("../context.zig").AppContext;
+const state = @import("../states.zig");
 const fs = @import("../fs_utils.zig");
 const db_utils = @import("../db_utils.zig");
 
-pub fn render(ctx: *AppContext) !void {
-    var s = &ctx.page.project_select;
+pub fn render(ctx: *AppContext, page: *state.PageState) !void {
+    var s = &page.project_select;
     const allocator = ctx.allocator;
     const io = ctx.io;
-    const environ_map = &ctx.environ_map;
 
     if (!s.loaded)
-        try s.fetchProjects(allocator, io, environ_map);
+        try s.fetchProjects(ctx);
 
     var outer = dvui.box(@src(), .{}, .{
         .expand = .both,
@@ -40,7 +40,7 @@ pub fn render(ctx: *AppContext) !void {
                 .expand = .horizontal,
                 .corner_radius = dvui.Rect.all(2),
             })) {
-                const db_path = fs.getProjectPath(allocator, io, environ_map, entry.name) catch |err| {
+                const db_path = fs.getProjectPath(ctx, entry.name) catch |err| {
                     std.log.err("Failed to get DB path: {}", .{err});
                     continue;
                 };
@@ -51,7 +51,7 @@ pub fn render(ctx: *AppContext) !void {
                     continue;
                 };
 
-                ctx.page = .{ .project_view = .{ .name = entry.name, .db = database } };
+                page.* = .{ .project_view = .{ .name = entry.name, .db = database } };
                 return;
             }
         }
@@ -68,7 +68,7 @@ pub fn render(ctx: *AppContext) !void {
             if (try dvui.native_dialogs.Native.openMultiple(allocator, .{ .title = "Import .db files" })) |paths| {
                 defer allocator.free(paths);
                 for (paths) |path| {
-                    fs.importProject(allocator, io, environ_map, path) catch |err| {
+                    fs.importProject(ctx, path) catch |err| {
                         std.log.err("Import failed: {}", .{err});
                         continue;
                     };
@@ -107,7 +107,7 @@ pub fn render(ctx: *AppContext) !void {
 
             if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 1 })) {
                 if (name.len > 0) {
-                    fs.createProject(allocator, io, environ_map, name) catch |err| {
+                    fs.createProject(ctx, name) catch |err| {
                         if (err == error.PathAlreadyExists) {
                             dvui.dialog(@src(), .{}, .{
                                 .title = "Error",

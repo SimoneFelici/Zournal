@@ -1,17 +1,18 @@
 const std = @import("std");
 const dvui = @import("dvui");
 const AppContext = @import("../context.zig").AppContext;
+const state = @import("../states.zig");
 
 const COLS = 3;
 
-pub fn render(ctx: *AppContext) !void {
-    var s = &ctx.page.project_view;
+pub fn render(ctx: *AppContext, page: *state.PageState) !void {
+    var s = &page.project_view;
     const allocator = ctx.allocator;
 
     if (!s.notes_loaded)
         try s.loadNotes(allocator);
 
-    // New note
+    // ... tutto il resto del corpo identico a prima
     {
         if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
             s.new_note_dialog = !s.new_note_dialog;
@@ -51,7 +52,6 @@ pub fn render(ctx: *AppContext) !void {
         }
     }
 
-    // Notes wall
     {
         var scroll = dvui.scrollArea(@src(), .{}, .{
             .expand = .both,
@@ -93,7 +93,6 @@ pub fn render(ctx: *AppContext) !void {
         }
     }
 
-    // Open note
     if (s.open_note_id) |note_id| {
         const note_idx = for (s.notes.items, 0..) |n, idx| {
             if (n.id == note_id) break idx;
