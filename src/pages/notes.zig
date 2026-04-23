@@ -9,9 +9,6 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_view;
     const allocator = ctx.allocator;
 
-    if (!s.notes_loaded)
-        try s.loadNotes(allocator);
-
     // ... tutto il resto del corpo identico a prima
     {
         if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
