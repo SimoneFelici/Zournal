@@ -1,16 +1,22 @@
 const std = @import("std");
-const AppContext = @import("context.zig");
+const builtin = @import("builtin");
+const AppContext = @import("context.zig").AppContext;
 const dvui = @import("dvui");
-const state = @import("states.zig");
 const project_select = @import("pages/project_select.zig");
 const project_view = @import("pages/project_view.zig");
 const SDLBackend = @import("sdl-backend");
 
 var gpa: std.heap.DebugAllocator(.{}) = .init;
-const app_allocator = gpa.allocator();
+var io_threaded: std.Io.Threaded = .init_single_threaded;
 
-var page: state.PageState = .{ .project_select = .{} };
 var app_ctx: AppContext = undefined;
+
+fn processEnviron() std.process.Environ {
+    return switch (builtin.os.tag) {
+        .windows => .{ .block = .global },
+        else => .{ .block = .{ .slice = std.mem.sliceTo(std.c.environ, null) } },
+    };
+}
 
 pub const dvui_app: dvui.App = .{
     .config = .{
@@ -28,9 +34,14 @@ fn AppInit(win: *dvui.Window) !void {
     const sdl_backend: *SDLBackend = @ptrCast(@alignCast(win.backend.impl));
     _ = SDLBackend.c.SDL_MaximizeWindow(sdl_backend.window);
 
+    const allocator = gpa.allocator();
+    const environ_map = try processEnviron().createMap(allocator);
+
     app_ctx = .{
-        .allocator = app_allocator,
-        .io = std.Io.initDefault(),
+        .allocator = allocator,
+        .io = io_threaded.io(),
+        .environ_map = environ_map,
+        .page = .{ .project_select = .{} },
     };
 }
 
@@ -42,12 +53,9 @@ pub const std_options: std.Options = .{
 };
 
 pub fn AppFrame() !dvui.App.Result {
-    // dvui.label(@src(), "{d:0>3.0} fps", .{dvui.FPS()}, .{ .gravity_x = 1.0 });
-
-    switch (page) {
-        .project_select => try project_select.render(&page, app_ctx.allocator),
-        .project_view => try project_view.render(&page, app_ctx.allocator),
+    switch (app_ctx.page) {
+        .project_select => try project_select.render(&app_ctx),
+        .project_view => try project_view.render(&app_ctx),
     }
-
     return .ok;
 }

@@ -1,10 +1,13 @@
 const std = @import("std");
 const dvui = @import("dvui");
-const state = @import("../states.zig");
+const AppContext = @import("../context.zig").AppContext;
 
 const COLS = 3;
 
-pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
+pub fn render(ctx: *AppContext) !void {
+    var s = &ctx.page.project_view;
+    const allocator = ctx.allocator;
+
     if (!s.notes_loaded)
         try s.loadNotes(allocator);
 

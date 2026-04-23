@@ -13,9 +13,14 @@ pub const ProjectSelectState = struct {
     loaded: bool = false,
     new_project_dialog: bool = false,
 
-    pub fn fetchProjects(self: *ProjectSelectState, allocator: std.mem.Allocator) !void {
+    pub fn fetchProjects(
+        self: *ProjectSelectState,
+        allocator: std.mem.Allocator,
+        io: std.Io,
+        environ_map: *const std.process.Environ.Map,
+    ) !void {
         if (self.loaded) return;
-        self.projects = try fs.listProjects(allocator);
+        self.projects = try fs.listProjects(allocator, io, environ_map);
         self.loaded = true;
     }
 };
@@ -24,12 +29,12 @@ pub const ProjectViewState = struct {
     name: []const u8,
     tab: Tab = .cases,
     db: db_utils.Database,
-    cases: std.ArrayList(types.CaseEntry) = .{},
+    cases: std.ArrayList(types.CaseEntry) = .empty,
     cases_loaded: bool = false,
-    people: std.ArrayList(types.PersonEntry) = .{},
+    people: std.ArrayList(types.PersonEntry) = .empty,
     people_loaded: bool = false,
     new_person_dialog: bool = false,
-    notes: std.ArrayList(types.NoteEntry) = .{},
+    notes: std.ArrayList(types.NoteEntry) = .empty,
     notes_loaded: bool = false,
     new_note_dialog: bool = false,
     open_note_id: ?i64 = null,

@@ -1,12 +1,13 @@
 const std = @import("std");
 const dvui = @import("dvui");
+const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const cases = @import("cases.zig");
 const people = @import("people.zig");
 const notes = @import("notes.zig");
 
-pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
-    var s = &page.project_view;
+pub fn render(ctx: *AppContext) !void {
+    var s = &ctx.page.project_view;
 
     var outer = dvui.box(@src(), .{ .dir = .horizontal }, .{
         .expand = .both,
@@ -52,7 +53,7 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
             // Back
             if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = .red, .gravity_y = 1 })) {
                 s.db.close();
-                page.* = .{ .project_select = .{} };
+                ctx.page = .{ .project_select = .{} };
                 return;
             }
         }
@@ -69,9 +70,9 @@ pub fn render(page: *state.PageState, allocator: std.mem.Allocator) !void {
         defer content.deinit();
 
         switch (s.tab) {
-            .cases => try cases.render(s, allocator),
-            .people => try people.render(s, allocator),
-            .notes => try notes.render(s, allocator),
+            .cases => try cases.render(ctx),
+            .people => try people.render(ctx),
+            .notes => try notes.render(ctx),
             .timeline => dvui.label(@src(), "Timeline", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
             .relationships => dvui.label(@src(), "Relationships", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
         }
