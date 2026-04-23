@@ -24,7 +24,7 @@ pub const dvui_app: dvui.App = .{
     .config = .{
         .options = .{
             .size = .{ .w = 800.0, .h = 600.0 },
-            .min_size = .{ .w = 500.0, .h = 350.0 },
+            // .min_size = .{ .w = 500.0, .h = 350.0 },
             .title = "Zournal",
         },
     },

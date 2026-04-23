@@ -4,6 +4,7 @@ const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const fs = @import("../fs_utils.zig");
 const db_utils = @import("../db_utils.zig");
+const people_page = @import("people.zig");
 
 pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_select;
@@ -13,9 +14,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     if (!s.loaded)
         try s.fetchProjects(ctx);
 
-    var outer = dvui.box(@src(), .{}, .{
-        .expand = .both,
-    });
+    var outer = dvui.box(@src(), .{}, .{ .expand = .both });
     defer outer.deinit();
 
     var main_box = dvui.box(@src(), .{ .dir = .vertical }, .{
@@ -51,13 +50,21 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                     continue;
                 };
 
-                page.* = .{ .project_view = .{ .name = entry.name, .db = database } };
+                var pv: state.ProjectViewState = .{ .name = entry.name, .db = database };
+                pv.loadAll(allocator) catch |err| {
+                    std.log.err("Failed to load project data: {}", .{err});
+                    database.close();
+                    continue;
+                };
+                for (pv.people.items) |*p| people_page.computeInitials(p);
+
+                page.* = .{ .project_view = pv };
                 return;
             }
         }
     }
 
-    // Import and New
+    // Import e New
     {
         var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{
             .expand = .horizontal,
@@ -89,7 +96,6 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
         }
     }
 
-    // New Project Dialog
     if (s.new_project_dialog) {
         var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
         const name = te.getText();

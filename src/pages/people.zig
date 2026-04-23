@@ -7,8 +7,7 @@ const types = @import("../types.zig");
 const COLS = 6;
 const AVATAR_SIZE: f32 = 60;
 
-fn computeInitials(entry: *types.PersonEntry) void {
-    // ... invariato
+pub fn computeInitials(entry: *types.PersonEntry) void {
     var it = std.mem.splitScalar(u8, entry.name, ' ');
     const first = it.next();
     const second = it.next();
@@ -34,12 +33,6 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_view;
     const allocator = ctx.allocator;
 
-    // ... tutto il resto del corpo invariato
-    if (!s.people_loaded) {
-        try s.loadPeople(allocator);
-        for (s.people.items) |*p| computeInitials(p);
-    }
-
     {
         if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
             s.new_person_dialog = !s.new_person_dialog;
@@ -47,9 +40,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     }
 
     if (s.new_person_dialog) {
-        var dialog_box = dvui.box(@src(), .{ .dir = .horizontal }, .{
-            .expand = .horizontal,
-        });
+        var dialog_box = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
         defer dialog_box.deinit();
 
         var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
@@ -75,53 +66,48 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
         }
     }
 
+    // Wall
     {
-        var scroll = dvui.scrollArea(@src(), .{}, .{
-            .expand = .both,
-        });
+        var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
         defer scroll.deinit();
 
         var i: usize = 0;
         while (i < s.people.items.len) {
-            {
-                var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
-                    .id_extra = i,
+            var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
+                .id_extra = i,
+                .expand = .horizontal,
+            });
+            defer row.deinit();
+
+            var col: usize = 0;
+            while (col < COLS and i < s.people.items.len) : ({
+                col += 1;
+                i += 1;
+            }) {
+                const person = s.people.items[i];
+                const idx = i;
+
+                var card = dvui.box(@src(), .{ .dir = .vertical }, .{
+                    .id_extra = idx,
                     .expand = .horizontal,
                 });
-                defer row.deinit();
+                defer card.deinit();
 
-                var col: usize = 0;
-                while (col < COLS and i < s.people.items.len) : ({
-                    col += 1;
-                    i += 1;
-                }) {
-                    const person = s.people.items[i];
-                    const idx = i;
+                const avatar = person.initials[0..person.initials_len];
 
-                    {
-                        var card = dvui.box(@src(), .{ .dir = .vertical }, .{
-                            .id_extra = idx,
-                            .expand = .horizontal,
-                        });
-                        defer card.deinit();
-
-                        const avatar = person.initials[0..person.initials_len];
-
-                        if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{
-                            .id_extra = idx,
-                            .gravity_x = 0.5,
-                            .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE },
-                            .corner_radius = dvui.Rect.all(AVATAR_SIZE),
-                        })) {
-                            std.log.info("Selected person: {s}", .{person.name});
-                        }
-
-                        dvui.labelNoFmt(@src(), person.name, .{}, .{
-                            .id_extra = idx,
-                            .gravity_x = 0.5,
-                        });
-                    }
+                if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{
+                    .id_extra = idx,
+                    .gravity_x = 0.5,
+                    .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE },
+                    .corner_radius = dvui.Rect.all(AVATAR_SIZE),
+                })) {
+                    std.log.info("Selected person: {s}", .{person.name});
                 }
+
+                dvui.labelNoFmt(@src(), person.name, .{}, .{
+                    .id_extra = idx,
+                    .gravity_x = 0.5,
+                });
             }
         }
     }

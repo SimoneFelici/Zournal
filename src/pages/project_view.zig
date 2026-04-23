@@ -36,14 +36,11 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
             for (tab_entries) |entry| {
                 var tab = tabs.addTab(s.tab == entry.tab, .{ .expand = .horizontal });
                 defer tab.deinit();
-                if (entry.tab == .cases and s.cases_loaded) {
-                    dvui.label(@src(), "Cases ({d})", .{s.cases.items.len}, .{});
-                } else if (entry.tab == .people and s.people_loaded) {
-                    dvui.label(@src(), "People ({d})", .{s.people.items.len}, .{});
-                } else if (entry.tab == .notes and s.notes_loaded) {
-                    dvui.label(@src(), "Notes ({d})", .{s.notes.items.len}, .{});
-                } else {
-                    dvui.labelNoFmt(@src(), entry.label, .{}, .{});
+                switch (entry.tab) {
+                    .cases => dvui.label(@src(), "Cases ({d})", .{s.cases.items.len}, .{}),
+                    .people => dvui.label(@src(), "People ({d})", .{s.people.items.len}, .{}),
+                    .notes => dvui.label(@src(), "Notes ({d})", .{s.notes.items.len}, .{}),
+                    else => dvui.labelNoFmt(@src(), entry.label, .{}, .{}),
                 }
                 if (tab.clicked()) {
                     s.tab = entry.tab;
