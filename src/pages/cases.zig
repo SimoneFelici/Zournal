@@ -1,11 +1,12 @@
 const std = @import("std");
 const dvui = @import("dvui");
 const AppContext = @import("../context.zig").AppContext;
+const state = @import("../states.zig");
 
 const COLS = 4;
 
-pub fn render(ctx: *AppContext) !void {
-    var s = &ctx.page.project_view;
+pub fn render(ctx: *AppContext, page: *state.PageState) !void {
+    var s = &page.project_view;
     const allocator = ctx.allocator;
 
     if (!s.cases_loaded)

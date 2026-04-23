@@ -6,8 +6,8 @@ const cases = @import("cases.zig");
 const people = @import("people.zig");
 const notes = @import("notes.zig");
 
-pub fn render(ctx: *AppContext) !void {
-    var s = &ctx.page.project_view;
+pub fn render(ctx: *AppContext, page: *state.PageState) !void {
+    var s = &page.project_view;
 
     var outer = dvui.box(@src(), .{ .dir = .horizontal }, .{
         .expand = .both,
@@ -53,7 +53,7 @@ pub fn render(ctx: *AppContext) !void {
             // Back
             if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = .red, .gravity_y = 1 })) {
                 s.db.close();
-                ctx.page = .{ .project_select = .{} };
+                page.* = .{ .project_select = .{} };
                 return;
             }
         }
@@ -70,9 +70,9 @@ pub fn render(ctx: *AppContext) !void {
         defer content.deinit();
 
         switch (s.tab) {
-            .cases => try cases.render(ctx),
-            .people => try people.render(ctx),
-            .notes => try notes.render(ctx),
+            .cases => try cases.render(ctx, page),
+            .people => try people.render(ctx, page),
+            .notes => try notes.render(ctx, page),
             .timeline => dvui.label(@src(), "Timeline", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
             .relationships => dvui.label(@src(), "Relationships", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
         }

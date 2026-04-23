@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const AppContext = @import("context.zig").AppContext;
+const state = @import("states.zig");
 const dvui = @import("dvui");
 const project_select = @import("pages/project_select.zig");
 const project_view = @import("pages/project_view.zig");
@@ -10,6 +11,7 @@ var gpa: std.heap.DebugAllocator(.{}) = .init;
 var io_threaded: std.Io.Threaded = .init_single_threaded;
 
 var app_ctx: AppContext = undefined;
+var page: state.PageState = .{ .project_select = .{} };
 
 fn processEnviron() std.process.Environ {
     return switch (builtin.os.tag) {
@@ -41,7 +43,6 @@ fn AppInit(win: *dvui.Window) !void {
         .allocator = allocator,
         .io = io_threaded.io(),
         .environ_map = environ_map,
-        .page = .{ .project_select = .{} },
     };
 }
 
@@ -53,9 +54,9 @@ pub const std_options: std.Options = .{
 };
 
 pub fn AppFrame() !dvui.App.Result {
-    switch (app_ctx.page) {
-        .project_select => try project_select.render(&app_ctx),
-        .project_view => try project_view.render(&app_ctx),
+    switch (page) {
+        .project_select => try project_select.render(&app_ctx, &page),
+        .project_view => try project_view.render(&app_ctx, &page),
     }
     return .ok;
 }

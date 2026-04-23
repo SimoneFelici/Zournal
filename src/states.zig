@@ -2,6 +2,7 @@ const std = @import("std");
 const types = @import("types.zig");
 const fs = @import("fs_utils.zig");
 const db_utils = @import("db_utils.zig");
+const AppContext = @import("context.zig").AppContext;
 
 pub const PageState = union(enum) {
     project_select: ProjectSelectState,
@@ -13,14 +14,9 @@ pub const ProjectSelectState = struct {
     loaded: bool = false,
     new_project_dialog: bool = false,
 
-    pub fn fetchProjects(
-        self: *ProjectSelectState,
-        allocator: std.mem.Allocator,
-        io: std.Io,
-        environ_map: *const std.process.Environ.Map,
-    ) !void {
+    pub fn fetchProjects(self: *ProjectSelectState, ctx: *const AppContext) !void {
         if (self.loaded) return;
-        self.projects = try fs.listProjects(allocator, io, environ_map);
+        self.projects = try fs.listProjects(ctx);
         self.loaded = true;
     }
 };
