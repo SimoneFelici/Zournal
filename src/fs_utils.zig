@@ -1,49 +1,58 @@
 const std = @import("std");
 const types = @import("types.zig");
 const db = @import("db_utils.zig");
+const known_folders = @import("known-folders");
+const AppContext = @import("context.zig").AppContext;
 
-pub fn getRootDir(allocator: std.mem.Allocator) std.fs.Dir {
-    const app_data = std.fs.getAppDataDir(allocator, "Zournal") catch unreachable;
-    defer allocator.free(app_data);
-    return std.fs.cwd().openDir(app_data, .{}) catch |err| switch (err) {
-        error.FileNotFound => {
-            std.fs.cwd().makePath(app_data) catch unreachable;
-            std.log.info("Created root folder {s}\n", .{app_data});
-            return std.fs.cwd().openDir(app_data, .{}) catch unreachable;
+pub fn getRootDir(ctx: *const AppContext) !std.Io.Dir {
+    const data_dir = (try known_folders.getPath(ctx.io, ctx.allocator, &ctx.environ_map, .data)) orelse
+        return error.NoDataDir;
+    defer ctx.allocator.free(data_dir);
+
+    const app_data = try std.Io.Dir.path.join(ctx.allocator, &.{ data_dir, "Zournal" });
+    defer ctx.allocator.free(app_data);
+
+    const cwd = std.Io.Dir.cwd();
+    return cwd.openDir(ctx.io, app_data, .{}) catch |err| switch (err) {
+        error.FileNotFound => blk: {
+            try cwd.createDirPath(ctx.io, app_data);
+            std.log.info("Created root folder {s}", .{app_data});
+            break :blk try cwd.openDir(ctx.io, app_data, .{});
         },
-        else => unreachable,
+        else => return err,
     };
 }
 
-pub fn getProjectsDir(allocator: std.mem.Allocator) std.fs.Dir {
-    var root = getRootDir(allocator);
-    defer root.close();
-    return root.openDir("projects", .{ .iterate = true }) catch |err| switch (err) {
-        error.FileNotFound => {
-            root.makeDir("projects") catch unreachable;
-            std.log.info("Created projects folder\n", .{});
-            return root.openDir("projects", .{ .iterate = true }) catch unreachable;
+pub fn getProjectsDir(ctx: *const AppContext) !std.Io.Dir {
+    var root = try getRootDir(ctx);
+    defer root.close(ctx.io);
+
+    return root.openDir(ctx.io, "projects", .{ .iterate = true }) catch |err| switch (err) {
+        error.FileNotFound => blk: {
+            try root.createDir(ctx.io, "projects", .default_dir);
+            std.log.info("Created projects folder", .{});
+            break :blk try root.openDir(ctx.io, "projects", .{ .iterate = true });
         },
-        else => unreachable,
+        else => return err,
     };
 }
 
 fn compareByMtimeDesc(_: void, a: types.ProjectEntry, b: types.ProjectEntry) bool {
-    return a.mtime > b.mtime;
+    return a.mtime.durationTo(b.mtime).toNanoseconds() < 0;
 }
 
-pub fn listProjects(allocator: std.mem.Allocator) !std.ArrayList(types.ProjectEntry) {
-    var dir = getProjectsDir(allocator);
-    defer dir.close();
+pub fn listProjects(ctx: *const AppContext) !std.ArrayList(types.ProjectEntry) {
+    var dir = try getProjectsDir(ctx);
+    defer dir.close(ctx.io);
 
-    var projects: std.ArrayList(types.ProjectEntry) = .{};
+    var projects: std.ArrayList(types.ProjectEntry) = .empty;
     var iter = dir.iterate();
-    while (try iter.next()) |entry| {
+    while (try iter.next(ctx.io)) |entry| {
         if (entry.kind == .file and std.mem.endsWith(u8, entry.name, ".db")) {
-            const stat = dir.statFile(entry.name) catch continue;
+            const stat = dir.statFile(ctx.io, entry.name, .{}) catch continue;
             const cut = entry.name[0 .. entry.name.len - 3];
-            const name = try allocator.dupe(u8, cut);
-            try projects.append(allocator, .{ .name = name, .mtime = stat.mtime });
+            const name = try ctx.allocator.dupe(u8, cut);
+            try projects.append(ctx.allocator, .{ .name = name, .mtime = stat.mtime });
         }
     }
 
@@ -51,44 +60,57 @@ pub fn listProjects(allocator: std.mem.Allocator) !std.ArrayList(types.ProjectEn
     return projects;
 }
 
-pub fn importProject(allocator: std.mem.Allocator, src_path: []const u8) !void {
-    var dir = getProjectsDir(allocator);
-    defer dir.close();
-
-    const basename = std.fs.path.basename(src_path);
-
+pub fn importProject(ctx: *const AppContext, src_path: []const u8) !void {
+    const basename = std.Io.Dir.path.basename(src_path);
     if (!std.mem.endsWith(u8, basename, ".db")) return error.InvalidFileType;
 
-    try std.fs.cwd().copyFile(src_path, dir, basename, .{});
+    const data_dir = (try known_folders.getPath(ctx.io, ctx.allocator, &ctx.environ_map, .data)) orelse
+        return error.NoDataDir;
+    defer ctx.allocator.free(data_dir);
+
+    var dir = try getProjectsDir(ctx);
+    dir.close(ctx.io);
+
+    const dst_path = try std.Io.Dir.path.join(
+        ctx.allocator,
+        &.{ data_dir, "Zournal", "projects", basename },
+    );
+    defer ctx.allocator.free(dst_path);
+
+    try std.Io.Dir.copyFileAbsolute(src_path, dst_path, ctx.io, .{});
 
     std.log.info("Imported project: {s}", .{basename});
 }
 
-pub fn getProjectPath(allocator: std.mem.Allocator, name: []const u8) ![:0]u8 {
-    var dir = getProjectsDir(allocator);
-    defer dir.close();
+pub fn getProjectPath(ctx: *const AppContext, name: []const u8) ![:0]u8 {
+    const data_dir = (try known_folders.getPath(ctx.io, ctx.allocator, &ctx.environ_map, .data)) orelse
+        return error.NoDataDir;
+    defer ctx.allocator.free(data_dir);
 
-    const filename = try std.fmt.allocPrint(allocator, "{s}.db", .{name});
-    defer allocator.free(filename);
+    const filename = try std.fmt.allocPrint(ctx.allocator, "{s}.db", .{name});
+    defer ctx.allocator.free(filename);
 
-    const path = try dir.realpathAlloc(allocator, filename);
-    defer allocator.free(path);
+    const path = try std.Io.Dir.path.join(
+        ctx.allocator,
+        &.{ data_dir, "Zournal", "projects", filename },
+    );
+    defer ctx.allocator.free(path);
 
-    return try allocator.dupeZ(u8, path);
+    return ctx.allocator.dupeZ(u8, path);
 }
 
-pub fn createProject(allocator: std.mem.Allocator, name: []const u8) !void {
-    var dir = getProjectsDir(allocator);
-    defer dir.close();
+pub fn createProject(ctx: *const AppContext, name: []const u8) !void {
+    var dir = try getProjectsDir(ctx);
+    defer dir.close(ctx.io);
 
-    const filename = try std.fmt.allocPrint(allocator, "{s}.db", .{name});
-    defer allocator.free(filename);
+    const filename = try std.fmt.allocPrint(ctx.allocator, "{s}.db", .{name});
+    defer ctx.allocator.free(filename);
 
-    var file = try dir.createFile(filename, .{ .exclusive = true });
-    file.close();
+    var file = try dir.createFile(ctx.io, filename, .{ .exclusive = true });
+    file.close(ctx.io);
 
-    const path = try getProjectPath(allocator, name);
-    defer allocator.free(path);
+    const path = try getProjectPath(ctx, name);
+    defer ctx.allocator.free(path);
 
     try db.initDatabase(path);
 

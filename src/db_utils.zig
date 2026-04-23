@@ -23,7 +23,7 @@ pub const Database = struct {
 
     // Cases
     pub fn listCases(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.CaseEntry) {
-        var cases: std.ArrayList(types.CaseEntry) = .{};
+        var cases: std.ArrayList(types.CaseEntry) = .empty;
 
         var rows = self.conn.rows("SELECT id, c_name FROM Cases ORDER BY last_access DESC", .{}) catch return error.QueryFailed;
         defer rows.deinit();
@@ -45,7 +45,7 @@ pub const Database = struct {
 
     // People
     pub fn listPeople(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.PersonEntry) {
-        var people: std.ArrayList(types.PersonEntry) = .{};
+        var people: std.ArrayList(types.PersonEntry) = .empty;
 
         var rows = self.conn.rows("SELECT id, p_name FROM People ORDER BY p_name ASC", .{}) catch return error.QueryFailed;
         defer rows.deinit();
@@ -75,7 +75,7 @@ pub const Database = struct {
 
     // Notes
     pub fn listNotes(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.NoteEntry) {
-        var notes: std.ArrayList(types.NoteEntry) = .{};
+        var notes: std.ArrayList(types.NoteEntry) = .empty;
 
         var rows = self.conn.rows("SELECT id, title, content FROM Notes ORDER BY id DESC", .{}) catch return error.QueryFailed;
         defer rows.deinit();

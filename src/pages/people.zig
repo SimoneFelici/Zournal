@@ -1,5 +1,6 @@
 const std = @import("std");
 const dvui = @import("dvui");
+const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const types = @import("../types.zig");
 
@@ -7,6 +8,7 @@ const COLS = 6;
 const AVATAR_SIZE: f32 = 60;
 
 fn computeInitials(entry: *types.PersonEntry) void {
+    // ... invariato
     var it = std.mem.splitScalar(u8, entry.name, ' ');
     const first = it.next();
     const second = it.next();
@@ -28,7 +30,11 @@ fn computeInitials(entry: *types.PersonEntry) void {
     }
 }
 
-pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
+pub fn render(ctx: *AppContext, page: *state.PageState) !void {
+    var s = &page.project_view;
+    const allocator = ctx.allocator;
+
+    // ... tutto il resto del corpo invariato
     if (!s.people_loaded) {
         try s.loadPeople(allocator);
         for (s.people.items) |*p| computeInitials(p);
@@ -69,7 +75,6 @@ pub fn render(s: *state.ProjectViewState, allocator: std.mem.Allocator) !void {
         }
     }
 
-    // People wall
     {
         var scroll = dvui.scrollArea(@src(), .{}, .{
             .expand = .both,
