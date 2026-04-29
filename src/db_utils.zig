@@ -73,6 +73,37 @@ pub const Database = struct {
         self.conn.exec("DELETE FROM People WHERE id = ?", .{id}) catch return error.DeleteFailed;
     }
 
+    // People (case-scoped)
+    pub fn listPeopleForCase(self: Database, case_id: i64, allocator: std.mem.Allocator) !std.ArrayList(types.PersonEntry) {
+        var people: std.ArrayList(types.PersonEntry) = .empty;
+
+        var rows = self.conn.rows(
+            "SELECT p.id, p.p_name FROM People p JOIN People_Cases pc ON pc.people_id = p.id WHERE pc.case_id = ? ORDER BY p.p_name ASC",
+            .{case_id},
+        ) catch return error.QueryFailed;
+        defer rows.deinit();
+
+        while (rows.next()) |row| {
+            const id = row.int(0);
+            const name = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
+            people.append(allocator, .{ .id = id, .name = name }) catch return error.OutOfMemory;
+        }
+        if (rows.err) |err| return err;
+
+        return people;
+    }
+
+    pub fn createPersonInCase(self: Database, name: []const u8, case_id: i64) !i64 {
+        self.conn.exec("INSERT INTO People (p_name) VALUES (?)", .{name}) catch return error.InsertFailed;
+        const id = self.conn.lastInsertedRowId();
+        self.conn.exec("INSERT INTO People_Cases (people_id, case_id) VALUES (?, ?)", .{ id, case_id }) catch return error.InsertFailed;
+        return id;
+    }
+
+    pub fn linkPersonToCase(self: Database, person_id: i64, case_id: i64) !void {
+        self.conn.exec("INSERT OR IGNORE INTO People_Cases (people_id, case_id) VALUES (?, ?)", .{ person_id, case_id }) catch return error.InsertFailed;
+    }
+
     // Notes
     pub fn listNotes(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.NoteEntry) {
         var notes: std.ArrayList(types.NoteEntry) = .empty;
@@ -93,6 +124,28 @@ pub const Database = struct {
 
     pub fn createNote(self: Database, title: []const u8) !i64 {
         self.conn.exec("INSERT INTO Notes (title, content) VALUES (?, '')", .{title}) catch return error.InsertFailed;
+        return self.conn.lastInsertedRowId();
+    }
+
+    pub fn listNotesForCase(self: Database, case_id: i64, allocator: std.mem.Allocator) !std.ArrayList(types.NoteEntry) {
+        var notes: std.ArrayList(types.NoteEntry) = .empty;
+
+        var rows = self.conn.rows("SELECT id, title, content FROM Notes WHERE case_id = ? ORDER BY id DESC", .{case_id}) catch return error.QueryFailed;
+        defer rows.deinit();
+
+        while (rows.next()) |row| {
+            const id = row.int(0);
+            const title = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
+            const content = allocator.dupe(u8, row.text(2)) catch return error.OutOfMemory;
+            notes.append(allocator, .{ .id = id, .title = title, .content = content }) catch return error.OutOfMemory;
+        }
+        if (rows.err) |err| return err;
+
+        return notes;
+    }
+
+    pub fn createNoteForCase(self: Database, title: []const u8, case_id: i64) !i64 {
+        self.conn.exec("INSERT INTO Notes (title, content, case_id) VALUES (?, '', ?)", .{ title, case_id }) catch return error.InsertFailed;
         return self.conn.lastInsertedRowId();
     }
 

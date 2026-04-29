@@ -2,14 +2,14 @@ const std = @import("std");
 const dvui = @import("dvui");
 const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
+const grid = @import("../ui/grid.zig");
 
-const COLS = 3;
+const MIN_CARD_WIDTH: f32 = 180;
 
 pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_view;
     const allocator = ctx.allocator;
 
-    // ... tutto il resto del corpo identico a prima
     {
         if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
             s.new_note_dialog = !s.new_note_dialog;
@@ -55,17 +55,20 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
         });
         defer scroll.deinit();
 
+        const cols = grid.colsFor(scroll.data().rect.w, MIN_CARD_WIDTH);
+
         var i: usize = 0;
-        while (i < s.notes.items.len) {
+        var row_idx: usize = 0;
+        while (i < s.notes.items.len) : (row_idx += 1) {
             var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
-                .id_extra = i,
+                .id_extra = row_idx,
                 .expand = .horizontal,
             });
             defer row.deinit();
 
-            var col: usize = 0;
-            while (col < COLS and i < s.notes.items.len) : ({
-                col += 1;
+            var c: usize = 0;
+            while (c < cols and i < s.notes.items.len) : ({
+                c += 1;
                 i += 1;
             }) {
                 const note = s.notes.items[i];
