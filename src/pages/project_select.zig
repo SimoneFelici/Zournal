@@ -56,8 +56,6 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                     database.close();
                     continue;
                 };
-                for (pv.people.items) |*p| people_page.computeInitials(p);
-
                 page.* = .{ .project_view = pv };
                 return;
             }

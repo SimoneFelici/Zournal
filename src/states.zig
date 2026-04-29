@@ -55,6 +55,7 @@ pub const CaseViewState = struct {
     people: std.ArrayList(types.PersonEntry) = .empty,
     notes: std.ArrayList(types.NoteEntry) = .empty,
     new_person_dialog: bool = false,
+    import_person_dialog: bool = false,
     new_note_dialog: bool = false,
     open_note_id: ?i64 = null,
     loaded: bool = false,

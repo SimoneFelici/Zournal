@@ -24,13 +24,14 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
 
         var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
         const title = te.textGet();
+        const enter = te.enter_pressed;
         te.deinit();
 
         if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{})) {
             s.new_note_dialog = false;
         }
 
-        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue })) {
+        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue }) or enter) {
             if (title.len > 0) {
                 const id = s.db.createNote(title) catch |err| {
                     std.log.err("Create note failed: {}", .{err});
