@@ -5,9 +5,15 @@ const state = @import("../states.zig");
 const cases = @import("cases.zig");
 const people = @import("people.zig");
 const notes = @import("notes.zig");
+const case_view = @import("case_view.zig");
 
 pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_view;
+
+    if (s.case_view != null) {
+        try case_view.render(ctx, page);
+        return;
+    }
 
     var outer = dvui.box(@src(), .{ .dir = .horizontal }, .{
         .expand = .both,

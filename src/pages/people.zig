@@ -3,8 +3,9 @@ const dvui = @import("dvui");
 const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const types = @import("../types.zig");
+const grid = @import("../ui/grid.zig");
 
-const COLS = 6;
+const MIN_CARD_WIDTH: f32 = 100;
 const AVATAR_SIZE: f32 = 60;
 
 pub fn computeInitials(entry: *types.PersonEntry) void {
@@ -66,22 +67,25 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
         }
     }
 
-    // Wall
+    // People wall
     {
         var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
         defer scroll.deinit();
 
+        const cols = grid.colsFor(scroll.data().rect.w, MIN_CARD_WIDTH);
+
         var i: usize = 0;
-        while (i < s.people.items.len) {
+        var row_idx: usize = 0;
+        while (i < s.people.items.len) : (row_idx += 1) {
             var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
-                .id_extra = i,
+                .id_extra = row_idx,
                 .expand = .horizontal,
             });
             defer row.deinit();
 
-            var col: usize = 0;
-            while (col < COLS and i < s.people.items.len) : ({
-                col += 1;
+            var c: usize = 0;
+            while (c < cols and i < s.people.items.len) : ({
+                c += 1;
                 i += 1;
             }) {
                 const person = s.people.items[i];

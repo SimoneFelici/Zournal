@@ -31,6 +31,7 @@ pub const ProjectViewState = struct {
     new_person_dialog: bool = false,
     new_note_dialog: bool = false,
     open_note_id: ?i64 = null,
+    case_view: ?CaseViewState = null,
 
     pub const Tab = enum {
         cases,
@@ -44,5 +45,26 @@ pub const ProjectViewState = struct {
         self.cases = try self.db.listCases(allocator);
         self.people = try self.db.listPeople(allocator);
         self.notes = try self.db.listNotes(allocator);
+    }
+};
+
+pub const CaseViewState = struct {
+    case_id: i64,
+    case_name: []const u8,
+    tab: Tab = .people,
+    people: std.ArrayList(types.PersonEntry) = .empty,
+    notes: std.ArrayList(types.NoteEntry) = .empty,
+    new_person_dialog: bool = false,
+    new_note_dialog: bool = false,
+    open_note_id: ?i64 = null,
+    loaded: bool = false,
+
+    pub const Tab = enum { people, notes, timeline };
+
+    pub fn load(self: *CaseViewState, db: db_utils.Database, allocator: std.mem.Allocator) !void {
+        if (self.loaded) return;
+        self.people = try db.listPeopleForCase(self.case_id, allocator);
+        self.notes = try db.listNotesForCase(self.case_id, allocator);
+        self.loaded = true;
     }
 };

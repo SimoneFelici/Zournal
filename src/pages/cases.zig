@@ -2,8 +2,9 @@ const std = @import("std");
 const dvui = @import("dvui");
 const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
+const grid = @import("../ui/grid.zig");
 
-const COLS = 4;
+const MIN_CARD_WIDTH: f32 = 140;
 
 pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_view;
@@ -23,22 +24,23 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
 
     // Case wall
     {
-        var scroll = dvui.scrollArea(@src(), .{}, .{
-            .expand = .both,
-        });
+        var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
         defer scroll.deinit();
 
+        const cols = grid.colsFor(scroll.data().rect.w, MIN_CARD_WIDTH);
+
         var i: usize = 0;
-        while (i < s.cases.items.len) {
+        var row_idx: usize = 0;
+        while (i < s.cases.items.len) : (row_idx += 1) {
             var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
-                .id_extra = i,
+                .id_extra = row_idx,
                 .expand = .horizontal,
             });
             defer row.deinit();
 
-            var col: usize = 0;
-            while (col < COLS and i < s.cases.items.len) : ({
-                col += 1;
+            var c: usize = 0;
+            while (c < cols and i < s.cases.items.len) : ({
+                c += 1;
                 i += 1;
             }) {
                 const case_entry = s.cases.items[i];
@@ -48,7 +50,10 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                     .min_size_content = .{ .w = 120, .h = 80 },
                     .corner_radius = dvui.Rect.all(3),
                 })) {
-                    std.log.info("Selected case: {s}", .{case_entry.name});
+                    s.case_view = .{
+                        .case_id = case_entry.id,
+                        .case_name = case_entry.name,
+                    };
                 }
             }
         }
