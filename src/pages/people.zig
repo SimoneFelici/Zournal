@@ -8,28 +8,6 @@ const grid = @import("../ui/grid.zig");
 const MIN_CARD_WIDTH: f32 = 100;
 const AVATAR_SIZE: f32 = 60;
 
-pub fn computeInitials(entry: *types.PersonEntry) void {
-    var it = std.mem.splitScalar(u8, entry.name, ' ');
-    const first = it.next();
-    const second = it.next();
-    entry.initials_len = 0;
-    if (first) |f| {
-        if (f.len > 0) {
-            entry.initials[entry.initials_len] = std.ascii.toUpper(f[0]);
-            entry.initials_len += 1;
-        }
-        if (second) |s| {
-            if (s.len > 0) {
-                entry.initials[entry.initials_len] = std.ascii.toUpper(s[0]);
-                entry.initials_len += 1;
-            }
-        } else if (f.len > 1) {
-            entry.initials[entry.initials_len] = std.ascii.toUpper(f[1]);
-            entry.initials_len += 1;
-        }
-    }
-}
-
 pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_view;
     const allocator = ctx.allocator;
@@ -45,14 +23,15 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
         defer dialog_box.deinit();
 
         var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
-        const name = te.getText();
+        const name = te.textGet();
+        const enter = te.enter_pressed;
         te.deinit();
 
         if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{})) {
             s.new_person_dialog = false;
         }
 
-        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue })) {
+        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue }) or enter) {
             if (name.len > 0) {
                 const id = s.db.createPerson(name) catch |err| {
                     std.log.err("Create person failed: {}", .{err});
@@ -60,7 +39,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                 };
                 const duped = allocator.dupe(u8, name) catch unreachable;
                 var new_person = types.PersonEntry{ .id = id, .name = duped };
-                computeInitials(&new_person);
+                new_person.computeInitials();
                 s.people.append(allocator, new_person) catch unreachable;
                 s.new_person_dialog = false;
             }

@@ -4,7 +4,6 @@ const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const types = @import("../types.zig");
 const grid = @import("../ui/grid.zig");
-const people_page = @import("people.zig");
 
 const MIN_CARD_WIDTH_PEOPLE: f32 = 100;
 const MIN_CARD_WIDTH_NOTES: f32 = 180;
@@ -75,8 +74,19 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
 fn renderPeople(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
     const allocator = ctx.allocator;
 
-    if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
-        cv.new_person_dialog = !cv.new_person_dialog;
+    {
+        var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
+        defer btn_row.deinit();
+
+        if (dvui.button(@src(), "Import", .{ .draw_focus = false }, .{})) {
+            cv.import_person_dialog = !cv.import_person_dialog;
+            cv.new_person_dialog = false;
+        }
+
+        if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
+            cv.new_person_dialog = !cv.new_person_dialog;
+            cv.import_person_dialog = false;
+        }
     }
 
     if (cv.new_person_dialog) {
@@ -85,13 +95,14 @@ fn renderPeople(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseVie
 
         var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
         const name = te.textGet();
+        const enter = te.enter_pressed;
         te.deinit();
 
         if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{})) {
             cv.new_person_dialog = false;
         }
 
-        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue })) {
+        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue }) or enter) {
             if (name.len > 0) {
                 const id = s.db.createPersonInCase(name, cv.case_id) catch |err| {
                     std.log.err("Create person in case failed: {}", .{err});
@@ -99,11 +110,53 @@ fn renderPeople(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseVie
                 };
                 const duped = allocator.dupe(u8, name) catch unreachable;
                 var new_person = types.PersonEntry{ .id = id, .name = duped };
-                people_page.computeInitials(&new_person);
+                new_person.computeInitials();
                 cv.people.append(allocator, new_person) catch unreachable;
                 s.people.append(allocator, new_person) catch unreachable;
                 cv.new_person_dialog = false;
             }
+        }
+    }
+
+    if (cv.import_person_dialog) {
+        var show = true;
+        var fw = dvui.floatingWindow(@src(), .{}, .{
+            .min_size_content = .{ .w = 280, .h = 360 },
+        });
+        defer fw.deinit();
+
+        fw.dragAreaSet(dvui.windowHeader("Import Person", "", &show));
+
+        if (!show) {
+            cv.import_person_dialog = false;
+            return;
+        }
+
+        var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
+        defer scroll.deinit();
+
+        var any = false;
+        for (s.people.items, 0..) |person, i| {
+            const in_case = for (cv.people.items) |cp| {
+                if (cp.id == person.id) break true;
+            } else false;
+            if (in_case) continue;
+            any = true;
+
+            if (dvui.button(@src(), person.name, .{ .draw_focus = false }, .{
+                .id_extra = i,
+                .expand = .horizontal,
+            })) {
+                s.db.linkPersonToCase(person.id, cv.case_id) catch |err| {
+                    std.log.err("Link person to case failed: {}", .{err});
+                    continue;
+                };
+                cv.people.append(allocator, person) catch unreachable;
+            }
+        }
+
+        if (!any) {
+            dvui.label(@src(), "No people to import", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 });
         }
     }
 
@@ -167,13 +220,14 @@ fn renderNotes(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseView
 
         var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
         const title = te.textGet();
+        const enter = te.enter_pressed;
         te.deinit();
 
         if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{})) {
             cv.new_note_dialog = false;
         }
 
-        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue })) {
+        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue }) or enter) {
             if (title.len > 0) {
                 const id = s.db.createNoteForCase(title, cv.case_id) catch |err| {
                     std.log.err("Create note for case failed: {}", .{err});

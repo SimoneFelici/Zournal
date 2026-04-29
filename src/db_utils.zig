@@ -53,7 +53,9 @@ pub const Database = struct {
         while (rows.next()) |row| {
             const id = row.int(0);
             const name = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
-            people.append(allocator, .{ .id = id, .name = name }) catch return error.OutOfMemory;
+            var entry = types.PersonEntry{ .id = id, .name = name };
+            entry.computeInitials();
+            people.append(allocator, entry) catch return error.OutOfMemory;
         }
         if (rows.err) |err| return err;
 
@@ -86,7 +88,9 @@ pub const Database = struct {
         while (rows.next()) |row| {
             const id = row.int(0);
             const name = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
-            people.append(allocator, .{ .id = id, .name = name }) catch return error.OutOfMemory;
+            var entry = types.PersonEntry{ .id = id, .name = name };
+            entry.computeInitials();
+            people.append(allocator, entry) catch return error.OutOfMemory;
         }
         if (rows.err) |err| return err;
 

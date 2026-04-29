@@ -15,6 +15,28 @@ pub const PersonEntry = struct {
     name: []const u8,
     initials: [2]u8 = .{ 0, 0 },
     initials_len: u2 = 0,
+
+    pub fn computeInitials(self: *PersonEntry) void {
+        var it = std.mem.splitScalar(u8, self.name, ' ');
+        const first = it.next();
+        const second = it.next();
+        self.initials_len = 0;
+        if (first) |f| {
+            if (f.len > 0) {
+                self.initials[self.initials_len] = std.ascii.toUpper(f[0]);
+                self.initials_len += 1;
+            }
+            if (second) |s| {
+                if (s.len > 0) {
+                    self.initials[self.initials_len] = std.ascii.toUpper(s[0]);
+                    self.initials_len += 1;
+                }
+            } else if (f.len > 1) {
+                self.initials[self.initials_len] = std.ascii.toUpper(f[1]);
+                self.initials_len += 1;
+            }
+        }
+    }
 };
 
 pub const NoteEntry = struct {
