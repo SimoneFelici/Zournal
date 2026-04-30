@@ -84,7 +84,12 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                     .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE },
                     .corner_radius = dvui.Rect.all(AVATAR_SIZE),
                 })) {
-                    std.log.info("Selected person: {s}", .{person.name});
+                    s.person_view = .{
+                        .person_id = person.id,
+                        .person_name = person.name,
+                        .person_initials = person.initials,
+                        .person_initials_len = person.initials_len,
+                    };
                 }
 
                 dvui.labelNoFmt(@src(), person.name, .{}, .{
@@ -92,6 +97,11 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                     .gravity_x = 0.5,
                 });
             }
+            while (c < cols) : (c += 1) {
+                var spacer = dvui.box(@src(), .{}, .{ .id_extra = c, .expand = .horizontal });
+                defer spacer.deinit();
+            }
         }
     }
+
 }
