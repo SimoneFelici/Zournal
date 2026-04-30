@@ -35,7 +35,6 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
 
             const tab_entries = [_]struct { tab: state.ProjectViewState.Tab, label: []const u8 }{
                 .{ .tab = .cases, .label = "Cases" },
-                .{ .tab = .timeline, .label = "Timeline" },
                 .{ .tab = .people, .label = "People" },
                 .{ .tab = .relationships, .label = "Relationships" },
                 .{ .tab = .notes, .label = "Notes" },
@@ -48,7 +47,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                     .cases => dvui.label(@src(), "Cases ({d})", .{s.cases.items.len}, .{}),
                     .people => dvui.label(@src(), "People ({d})", .{s.people.items.len}, .{}),
                     .notes => dvui.label(@src(), "Notes ({d})", .{s.notes.items.len}, .{}),
-                    else => dvui.labelNoFmt(@src(), entry.label, .{}, .{}),
+                    .relationships => dvui.label(@src(), "Relationships ({d})", .{s.relationships.relationships.items.len}, .{}),
                 }
                 if (tab.clicked()) {
                     s.tab = entry.tab;
@@ -82,7 +81,6 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
             else
                 try people.render(ctx, page),
             .notes => try notes.render(ctx, page),
-            .timeline => dvui.label(@src(), "Timeline", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
             .relationships => try relationships.render(ctx, page),
         }
     }

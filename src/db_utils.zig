@@ -43,6 +43,14 @@ pub const Database = struct {
         return self.conn.lastInsertedRowId();
     }
 
+    pub fn renameCase(self: Database, id: i64, name: []const u8) !void {
+        self.conn.exec("UPDATE Cases SET c_name = ? WHERE id = ?", .{ name, id }) catch return error.UpdateFailed;
+    }
+
+    pub fn updateCaseAccess(self: Database, id: i64) !void {
+        self.conn.exec("UPDATE Cases SET last_access = strftime('%Y-%m-%dT%H:%M:%S', 'now') WHERE id = ?", .{id}) catch return error.UpdateFailed;
+    }
+
     // People
     pub fn listPeople(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.PersonEntry) {
         var people: std.ArrayList(types.PersonEntry) = .empty;

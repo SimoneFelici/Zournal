@@ -37,7 +37,6 @@ pub const ProjectViewState = struct {
 
     pub const Tab = enum {
         cases,
-        timeline,
         people,
         relationships,
         notes,
@@ -47,6 +46,7 @@ pub const ProjectViewState = struct {
         self.cases = try self.db.listCases(allocator);
         self.people = try self.db.listPeople(allocator);
         self.notes = try self.db.listNotes(allocator);
+        try self.relationships.load(self.db, self.people.items, allocator);
     }
 };
 
@@ -126,6 +126,7 @@ pub const CaseViewState = struct {
     new_person_dialog: bool = false,
     import_person_dialog: bool = false,
     new_note_dialog: bool = false,
+    rename_dialog: bool = false,
     open_note_id: ?i64 = null,
     person_view: ?PersonViewState = null,
     loaded: bool = false,
