@@ -9,7 +9,7 @@ git clone https://github.com/SimoneFelici/Zournal.git && cd Zournal
 ```
 
 ```bash
-zig build
+zig build -Doptimize=ReleaseFast
 ```
 
 Output file in zig-out.
