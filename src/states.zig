@@ -73,6 +73,7 @@ pub const RelationshipsState = struct {
     selected_id: ?i64 = null,
     connect_target_id: ?i64 = null,
     dragging_id: ?i64 = null,
+    confirm_delete_conn_id: ?i64 = null,
     loaded: bool = false,
 
     pub fn load(self: *RelationshipsState, db: db_utils.Database, people: []const types.PersonEntry, allocator: std.mem.Allocator) !void {
@@ -96,12 +97,32 @@ pub const RelationshipsState = struct {
     }
 };
 
+pub const TimelineState = struct {
+    events: std.ArrayList(types.TimelineEvent) = .empty,
+    connections: std.ArrayList(types.EventConnection) = .empty,
+    selected_id: ?i64 = null,
+    connect_target_id: ?i64 = null,
+    dragging_id: ?i64 = null,
+    editing_id: ?i64 = null,
+    confirm_delete_conn_id: ?i64 = null,
+    new_event_dialog: bool = false,
+    loaded: bool = false,
+
+    pub fn load(self: *TimelineState, db: db_utils.Database, case_id: i64, allocator: std.mem.Allocator) !void {
+        if (self.loaded) return;
+        self.events = try db.listTimelineEventsForCase(case_id, allocator);
+        self.connections = try db.listEventConnectionsForCase(case_id, allocator);
+        self.loaded = true;
+    }
+};
+
 pub const CaseViewState = struct {
     case_id: i64,
     case_name: []const u8,
     tab: Tab = .people,
     people: std.ArrayList(types.PersonEntry) = .empty,
     notes: std.ArrayList(types.NoteEntry) = .empty,
+    timeline: TimelineState = .{},
     new_person_dialog: bool = false,
     import_person_dialog: bool = false,
     new_note_dialog: bool = false,

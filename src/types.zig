@@ -57,3 +57,18 @@ pub const NodePos = struct {
     x: f32,
     y: f32,
 };
+
+pub const TimelineEvent = struct {
+    id: i64,
+    label: []const u8,
+    content: []const u8,
+    x: f32,
+    y: f32,
+};
+
+pub const EventConnection = struct {
+    id: i64,
+    from_id: i64,
+    to_id: i64,
+    connection_type: []const u8,
+};

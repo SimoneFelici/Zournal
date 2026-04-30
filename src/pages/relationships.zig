@@ -31,7 +31,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
 
             dvui.Path.stroke(.{ .points = &.{ pt_a, pt_b } }, .{
                 .thickness = 2.0 * canvas_rs.s,
-                .color = dvui.Color.silver,
+                .color = dvui.Color.blue,
                 .closed = false,
             });
 
@@ -63,7 +63,6 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                 .rect = dvui.Rect{ .x = pos.x - 20, .y = pos.y, .w = NODE_W },
             });
 
-            // Circle
             {
                 var circle = dvui.box(@src(), .{}, .{
                     .gravity_x = 0.5,
@@ -132,7 +131,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
         }
     }
 
-    // Connection dialog
+    // New relationship dialog
     if (rs.connect_target_id != null and rs.selected_id != null) {
         const sel_name = for (s.people.items) |p| {
             if (p.id == rs.selected_id.?) break p.name;
@@ -190,6 +189,45 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
             }
         }
     }
+
+    // Delete relationship dialog
+    if (rs.confirm_delete_conn_id) |conn_id| {
+        var show = true;
+        var fw = dvui.floatingWindow(@src(), .{}, .{
+            .min_size_content = .{ .w = 260, .h = 90 },
+        });
+        defer fw.deinit();
+
+        fw.dragAreaSet(dvui.windowHeader("Delete Relationship?", "", &show));
+
+        if (!show) {
+            rs.confirm_delete_conn_id = null;
+            return;
+        }
+
+        {
+            var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
+            defer btn_row.deinit();
+
+            if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{ .gravity_x = 0 })) {
+                rs.confirm_delete_conn_id = null;
+            }
+
+            if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .color_fill_hover = .red, .gravity_x = 1 })) {
+                s.db.deleteRelationship(conn_id) catch |err| {
+                    std.log.err("Delete relationship failed: {}", .{err});
+                };
+                for (rs.relationships.items, 0..) |r, ri| {
+                    if (r.id == conn_id) {
+                        _ = rs.relationships.orderedRemove(ri);
+                        break;
+                    }
+                }
+                rs.confirm_delete_conn_id = null;
+                rs.selected_id = null;
+            }
+        }
+    }
 }
 
 fn handleClick(rs: *state.RelationshipsState, person_id: i64) void {
@@ -197,9 +235,20 @@ fn handleClick(rs: *state.RelationshipsState, person_id: i64) void {
         rs.selected_id = person_id;
     } else if (rs.selected_id.? == person_id) {
         rs.selected_id = null;
+    } else if (existingRelConn(rs.relationships.items, rs.selected_id.?, person_id)) |conn_id| {
+        rs.confirm_delete_conn_id = conn_id;
+        rs.selected_id = null;
     } else {
         rs.connect_target_id = person_id;
     }
+}
+
+fn existingRelConn(relationships: []const types.RelationshipEntry, a: i64, b: i64) ?i64 {
+    for (relationships) |r| {
+        if ((r.person_a_id == a and r.person_b_id == b) or
+            (r.person_a_id == b and r.person_b_id == a)) return r.id;
+    }
+    return null;
 }
 
 fn posFor(positions: []types.NodePos, person_id: i64) ?types.NodePos {
