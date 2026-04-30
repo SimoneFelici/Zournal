@@ -56,6 +56,10 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                     };
                 }
             }
+            while (c < cols) : (c += 1) {
+                var spacer = dvui.box(@src(), .{}, .{ .id_extra = c, .expand = .horizontal });
+                defer spacer.deinit();
+            }
         }
     }
 }

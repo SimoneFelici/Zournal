@@ -6,6 +6,7 @@ const cases = @import("cases.zig");
 const people = @import("people.zig");
 const notes = @import("notes.zig");
 const case_view = @import("case_view.zig");
+const person_view = @import("person_view.zig");
 
 pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_view;
@@ -50,6 +51,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                 }
                 if (tab.clicked()) {
                     s.tab = entry.tab;
+                    s.person_view = null;
                 }
             }
 
@@ -74,7 +76,10 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
 
         switch (s.tab) {
             .cases => try cases.render(ctx, page),
-            .people => try people.render(ctx, page),
+            .people => if (s.person_view != null)
+                try person_view.render(ctx, s.db, &s.person_view)
+            else
+                try people.render(ctx, page),
             .notes => try notes.render(ctx, page),
             .timeline => dvui.label(@src(), "Timeline", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
             .relationships => dvui.label(@src(), "Relationships", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),

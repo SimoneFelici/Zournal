@@ -4,6 +4,7 @@ const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const types = @import("../types.zig");
 const grid = @import("../ui/grid.zig");
+const person_view = @import("person_view.zig");
 
 const MIN_CARD_WIDTH_PEOPLE: f32 = 100;
 const MIN_CARD_WIDTH_NOTES: f32 = 180;
@@ -43,7 +44,10 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                     .notes => dvui.label(@src(), "Notes ({d})", .{cv.notes.items.len}, .{}),
                     else => dvui.labelNoFmt(@src(), entry.label, .{}, .{}),
                 }
-                if (tab.clicked()) cv.tab = entry.tab;
+                if (tab.clicked()) {
+                    cv.tab = entry.tab;
+                    cv.person_view = null;
+                }
             }
 
             if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = .red, .gravity_y = 1 })) {
@@ -64,7 +68,10 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
         defer content.deinit();
 
         switch (cv.tab) {
-            .people => try renderPeople(ctx, s, cv),
+            .people => if (cv.person_view != null)
+                try person_view.render(ctx, s.db, &cv.person_view)
+            else
+                try renderPeople(ctx, s, cv),
             .notes => try renderNotes(ctx, s, cv),
             .timeline => dvui.label(@src(), "Timeline", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
         }
@@ -196,13 +203,22 @@ fn renderPeople(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseVie
                 .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE },
                 .corner_radius = dvui.Rect.all(AVATAR_SIZE),
             })) {
-                std.log.info("Selected person: {s}", .{person.name});
+                cv.person_view = .{
+                    .person_id = person.id,
+                    .person_name = person.name,
+                    .person_initials = person.initials,
+                    .person_initials_len = person.initials_len,
+                };
             }
 
             dvui.labelNoFmt(@src(), person.name, .{}, .{
                 .id_extra = idx,
                 .gravity_x = 0.5,
             });
+        }
+        while (c < cols) : (c += 1) {
+            var spacer = dvui.box(@src(), .{}, .{ .id_extra = c, .expand = .horizontal });
+            defer spacer.deinit();
         }
     }
 }
@@ -280,6 +296,10 @@ fn renderNotes(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseView
                 })) {
                     cv.open_note_id = cv.notes.items[i].id;
                 }
+            }
+            while (c < cols) : (c += 1) {
+                var spacer = dvui.box(@src(), .{}, .{ .id_extra = c, .expand = .horizontal });
+                defer spacer.deinit();
             }
         }
     }

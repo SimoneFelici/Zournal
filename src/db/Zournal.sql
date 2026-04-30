@@ -132,6 +132,19 @@ ON "Event_Connections" ("from_id");
 CREATE INDEX IF NOT EXISTS "Event_Connections_to"
 ON "Event_Connections" ("to_id");
 
+CREATE TABLE IF NOT EXISTS "Person_Notes" (
+	"id" INTEGER NOT NULL UNIQUE,
+	"person_id" INTEGER NOT NULL,
+	"title" TEXT NOT NULL DEFAULT 'Untitled',
+	"content" TEXT NOT NULL DEFAULT '',
+	PRIMARY KEY("id"),
+	FOREIGN KEY ("person_id") REFERENCES "People"("id")
+		ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS "Person_Notes_person"
+ON "Person_Notes" ("person_id");
+
 CREATE TRIGGER IF NOT EXISTS "auto_case_name"
 AFTER INSERT ON "Cases"
 WHEN NEW.c_name = ''

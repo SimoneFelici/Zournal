@@ -49,6 +49,11 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                     std.log.err("Failed to open DB: {}", .{err});
                     continue;
                 };
+                database.initSchema() catch |err| {
+                    std.log.err("Failed to migrate schema: {}", .{err});
+                    database.close();
+                    continue;
+                };
 
                 var pv: state.ProjectViewState = .{ .name = entry.name, .db = database };
                 pv.loadAll(allocator) catch |err| {
@@ -97,6 +102,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     if (s.new_project_dialog) {
         var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
         const name = te.getText();
+        const enter = te.enter_pressed;
         te.deinit();
 
         {
@@ -109,7 +115,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                 s.new_project_dialog = false;
             }
 
-            if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 1 })) {
+            if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 1 }) or enter) {
                 if (name.len > 0) {
                     fs.createProject(ctx, name) catch |err| {
                         if (err == error.PathAlreadyExists) {

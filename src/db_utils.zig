@@ -164,6 +164,37 @@ pub const Database = struct {
     pub fn deleteNote(self: Database, id: i64) !void {
         self.conn.exec("DELETE FROM Notes WHERE id = ?", .{id}) catch return error.DeleteFailed;
     }
+
+    // Person notes
+    pub fn listPersonNotes(self: Database, person_id: i64, allocator: std.mem.Allocator) !std.ArrayList(types.NoteEntry) {
+        var notes: std.ArrayList(types.NoteEntry) = .empty;
+
+        var rows = self.conn.rows("SELECT id, title, content FROM Person_Notes WHERE person_id = ? ORDER BY id DESC", .{person_id}) catch return error.QueryFailed;
+        defer rows.deinit();
+
+        while (rows.next()) |row| {
+            const id = row.int(0);
+            const title = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
+            const content = allocator.dupe(u8, row.text(2)) catch return error.OutOfMemory;
+            notes.append(allocator, .{ .id = id, .title = title, .content = content }) catch return error.OutOfMemory;
+        }
+        if (rows.err) |err| return err;
+
+        return notes;
+    }
+
+    pub fn createPersonNote(self: Database, person_id: i64, title: []const u8) !i64 {
+        self.conn.exec("INSERT INTO Person_Notes (person_id, title, content) VALUES (?, ?, '')", .{ person_id, title }) catch return error.InsertFailed;
+        return self.conn.lastInsertedRowId();
+    }
+
+    pub fn updatePersonNoteContent(self: Database, id: i64, content: []const u8) !void {
+        self.conn.exec("UPDATE Person_Notes SET content = ? WHERE id = ?", .{ content, id }) catch return error.UpdateFailed;
+    }
+
+    pub fn deletePersonNote(self: Database, id: i64) !void {
+        self.conn.exec("DELETE FROM Person_Notes WHERE id = ?", .{id}) catch return error.DeleteFailed;
+    }
 };
 
 pub fn initDatabase(path: [:0]const u8) !void {
