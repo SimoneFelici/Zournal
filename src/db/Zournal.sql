@@ -145,6 +145,30 @@ CREATE TABLE IF NOT EXISTS "Person_Notes" (
 CREATE INDEX IF NOT EXISTS "Person_Notes_person"
 ON "Person_Notes" ("person_id");
 
+CREATE TABLE IF NOT EXISTS "Person_Relationships" (
+	"id" INTEGER NOT NULL UNIQUE,
+	"person_a_id" INTEGER NOT NULL,
+	"person_b_id" INTEGER NOT NULL,
+	"label" TEXT NOT NULL DEFAULT '',
+	PRIMARY KEY("id"),
+	FOREIGN KEY ("person_a_id") REFERENCES "People"("id")
+		ON UPDATE NO ACTION ON DELETE CASCADE,
+	FOREIGN KEY ("person_b_id") REFERENCES "People"("id")
+		ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Person_Relationships_unique"
+ON "Person_Relationships" ("person_a_id", "person_b_id");
+
+CREATE TABLE IF NOT EXISTS "Person_Positions" (
+	"person_id" INTEGER NOT NULL UNIQUE,
+	"x" REAL NOT NULL DEFAULT 0,
+	"y" REAL NOT NULL DEFAULT 0,
+	PRIMARY KEY("person_id"),
+	FOREIGN KEY ("person_id") REFERENCES "People"("id")
+		ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
 CREATE TRIGGER IF NOT EXISTS "auto_case_name"
 AFTER INSERT ON "Cases"
 WHEN NEW.c_name = ''

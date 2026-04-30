@@ -7,6 +7,7 @@ const people = @import("people.zig");
 const notes = @import("notes.zig");
 const case_view = @import("case_view.zig");
 const person_view = @import("person_view.zig");
+const relationships = @import("relationships.zig");
 
 pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_view;
@@ -82,7 +83,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                 try people.render(ctx, page),
             .notes => try notes.render(ctx, page),
             .timeline => dvui.label(@src(), "Timeline", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
-            .relationships => dvui.label(@src(), "Relationships", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
+            .relationships => try relationships.render(ctx, page),
         }
     }
 }
