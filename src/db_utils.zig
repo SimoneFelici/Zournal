@@ -195,6 +195,50 @@ pub const Database = struct {
     pub fn deletePersonNote(self: Database, id: i64) !void {
         self.conn.exec("DELETE FROM Person_Notes WHERE id = ?", .{id}) catch return error.DeleteFailed;
     }
+
+    // Relationships
+    pub fn listRelationships(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.RelationshipEntry) {
+        var list: std.ArrayList(types.RelationshipEntry) = .empty;
+        var rows = self.conn.rows("SELECT id, person_a_id, person_b_id, label FROM Person_Relationships", .{}) catch return error.QueryFailed;
+        defer rows.deinit();
+        while (rows.next()) |row| {
+            const id = row.int(0);
+            const person_a_id = row.int(1);
+            const person_b_id = row.int(2);
+            const label = allocator.dupe(u8, row.text(3)) catch return error.OutOfMemory;
+            list.append(allocator, .{ .id = id, .person_a_id = person_a_id, .person_b_id = person_b_id, .label = label }) catch return error.OutOfMemory;
+        }
+        if (rows.err) |err| return err;
+        return list;
+    }
+
+    pub fn createRelationship(self: Database, person_a_id: i64, person_b_id: i64, label: []const u8) !i64 {
+        self.conn.exec("INSERT INTO Person_Relationships (person_a_id, person_b_id, label) VALUES (?, ?, ?)", .{ person_a_id, person_b_id, label }) catch return error.InsertFailed;
+        return self.conn.lastInsertedRowId();
+    }
+
+    pub fn deleteRelationship(self: Database, id: i64) !void {
+        self.conn.exec("DELETE FROM Person_Relationships WHERE id = ?", .{id}) catch return error.DeleteFailed;
+    }
+
+    // Node positions
+    pub fn listNodePositions(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.NodePos) {
+        var list: std.ArrayList(types.NodePos) = .empty;
+        var rows = self.conn.rows("SELECT person_id, x, y FROM Person_Positions", .{}) catch return error.QueryFailed;
+        defer rows.deinit();
+        while (rows.next()) |row| {
+            const person_id = row.int(0);
+            const x: f32 = @floatCast(row.float(1));
+            const y: f32 = @floatCast(row.float(2));
+            list.append(allocator, .{ .person_id = person_id, .x = x, .y = y }) catch return error.OutOfMemory;
+        }
+        if (rows.err) |err| return err;
+        return list;
+    }
+
+    pub fn saveNodePosition(self: Database, person_id: i64, x: f32, y: f32) !void {
+        self.conn.exec("INSERT OR REPLACE INTO Person_Positions (person_id, x, y) VALUES (?, ?, ?)", .{ person_id, x, y }) catch return error.InsertFailed;
+    }
 };
 
 pub fn initDatabase(path: [:0]const u8) !void {

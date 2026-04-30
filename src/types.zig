@@ -44,3 +44,16 @@ pub const NoteEntry = struct {
     title: []const u8,
     content: []const u8,
 };
+
+pub const RelationshipEntry = struct {
+    id: i64,
+    person_a_id: i64,
+    person_b_id: i64,
+    label: []const u8,
+};
+
+pub const NodePos = struct {
+    person_id: i64,
+    x: f32,
+    y: f32,
+};

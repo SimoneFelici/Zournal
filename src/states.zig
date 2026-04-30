@@ -33,6 +33,7 @@ pub const ProjectViewState = struct {
     open_note_id: ?i64 = null,
     case_view: ?CaseViewState = null,
     person_view: ?PersonViewState = null,
+    relationships: RelationshipsState = .{},
 
     pub const Tab = enum {
         cases,
@@ -63,6 +64,35 @@ pub const PersonViewState = struct {
         if (self.loaded) return;
         self.notes = try db.listPersonNotes(self.person_id, allocator);
         self.loaded = true;
+    }
+};
+
+pub const RelationshipsState = struct {
+    relationships: std.ArrayList(types.RelationshipEntry) = .empty,
+    positions: std.ArrayList(types.NodePos) = .empty,
+    selected_id: ?i64 = null,
+    connect_target_id: ?i64 = null,
+    dragging_id: ?i64 = null,
+    loaded: bool = false,
+
+    pub fn load(self: *RelationshipsState, db: db_utils.Database, people: []const types.PersonEntry, allocator: std.mem.Allocator) !void {
+        if (!self.loaded) {
+            self.relationships = try db.listRelationships(allocator);
+            self.positions = try db.listNodePositions(allocator);
+            self.loaded = true;
+        }
+        for (people, 0..) |person, i| {
+            const has = for (self.positions.items) |p| {
+                if (p.person_id == person.id) break true;
+            } else false;
+            if (!has) {
+                const n = @as(f32, @floatFromInt(if (people.len > 0) people.len else 1));
+                const angle = @as(f32, @floatFromInt(i)) * 2.0 * std.math.pi / n;
+                const x = 250.0 + 200.0 * @cos(angle);
+                const y = 250.0 + 200.0 * @sin(angle);
+                self.positions.append(allocator, .{ .person_id = person.id, .x = x, .y = y }) catch return error.OutOfMemory;
+            }
+        }
     }
 };
 
