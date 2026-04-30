@@ -25,7 +25,42 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
         var sidebar = dvui.box(@src(), .{ .dir = .vertical }, .{ .expand = .vertical });
         defer sidebar.deinit();
 
-        dvui.label(@src(), "{s}", .{cv.case_name}, .{ .expand = .horizontal, .gravity_x = 0.5 });
+        {
+            var name_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
+            defer name_row.deinit();
+            dvui.label(@src(), "{s}", .{cv.case_name}, .{ .gravity_y = 0.5 });
+            if (dvui.buttonIcon(@src(), "Rename", dvui.entypo.edit, .{ .draw_focus = false }, .{}, .{})) {
+                cv.rename_dialog = !cv.rename_dialog;
+            }
+        }
+
+        if (cv.rename_dialog) {
+            var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
+            const current = te.textGet();
+            if (current.len == 0 and cv.case_name.len > 0) {
+                te.textSet(cv.case_name, false);
+            }
+            const new_name = te.textGet();
+            const enter = te.enter_pressed;
+            te.deinit();
+
+            if (enter or dvui.button(@src(), "Save", .{ .draw_focus = false }, .{ .color_fill = .blue, .expand = .horizontal })) {
+                if (new_name.len > 0) {
+                    s.db.renameCase(cv.case_id, new_name) catch |err| {
+                        std.log.err("Rename case failed: {}", .{err});
+                    };
+                    const duped = ctx.allocator.dupe(u8, new_name) catch unreachable;
+                    cv.case_name = duped;
+                    for (s.cases.items) |*c| {
+                        if (c.id == cv.case_id) {
+                            c.name = duped;
+                            break;
+                        }
+                    }
+                    cv.rename_dialog = false;
+                }
+            }
+        }
 
         {
             var tabs = dvui.tabs(@src(), .{ .dir = .vertical, .draw_focus = false }, .{ .expand = .both, .gravity_y = 0 });
@@ -52,6 +87,14 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
             }
 
             if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = .red, .gravity_y = 1 })) {
+                s.db.updateCaseAccess(cv.case_id) catch {};
+                for (s.cases.items, 0..) |c, ci| {
+                    if (c.id == cv.case_id) {
+                        const entry = s.cases.orderedRemove(ci);
+                        s.cases.insert(ctx.allocator, 0, entry) catch {};
+                        break;
+                    }
+                }
                 s.case_view = null;
                 return;
             }
