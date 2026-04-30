@@ -5,6 +5,7 @@ const state = @import("../states.zig");
 const types = @import("../types.zig");
 const grid = @import("../ui/grid.zig");
 const person_view = @import("person_view.zig");
+const timeline = @import("timeline.zig");
 
 const MIN_CARD_WIDTH_PEOPLE: f32 = 100;
 const MIN_CARD_WIDTH_NOTES: f32 = 180;
@@ -73,7 +74,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
             else
                 try renderPeople(ctx, s, cv),
             .notes => try renderNotes(ctx, s, cv),
-            .timeline => dvui.label(@src(), "Timeline", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 }),
+            .timeline => try timeline.render(ctx, s, cv),
         }
     }
 }

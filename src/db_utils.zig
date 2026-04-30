@@ -221,6 +221,85 @@ pub const Database = struct {
         self.conn.exec("DELETE FROM Person_Relationships WHERE id = ?", .{id}) catch return error.DeleteFailed;
     }
 
+    // Timeline Events
+    pub fn listTimelineEventsForCase(self: Database, case_id: i64, allocator: std.mem.Allocator) !std.ArrayList(types.TimelineEvent) {
+        var list: std.ArrayList(types.TimelineEvent) = .empty;
+        var rows = self.conn.rows(
+            "SELECT id, COALESCE(label, ''), content, position_x, position_y FROM Timeline_Events WHERE case_id = ? ORDER BY id ASC",
+            .{case_id},
+        ) catch return error.QueryFailed;
+        defer rows.deinit();
+        while (rows.next()) |row| {
+            const id = row.int(0);
+            const label = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
+            const content = allocator.dupe(u8, row.text(2)) catch return error.OutOfMemory;
+            const x: f32 = @floatCast(row.float(3));
+            const y: f32 = @floatCast(row.float(4));
+            list.append(allocator, .{ .id = id, .label = label, .content = content, .x = x, .y = y }) catch return error.OutOfMemory;
+        }
+        if (rows.err) |err| return err;
+        return list;
+    }
+
+    pub fn createTimelineEvent(self: Database, case_id: i64, label: []const u8, x: f32, y: f32) !i64 {
+        self.conn.exec(
+            "INSERT INTO Timeline_Events (case_id, label, content, position_x, position_y) VALUES (?, ?, '', ?, ?)",
+            .{ case_id, label, x, y },
+        ) catch return error.InsertFailed;
+        return self.conn.lastInsertedRowId();
+    }
+
+    pub fn updateTimelineEventLabel(self: Database, id: i64, label: []const u8) !void {
+        self.conn.exec("UPDATE Timeline_Events SET label = ? WHERE id = ?", .{ label, id }) catch return error.UpdateFailed;
+    }
+
+    pub fn updateTimelineEventContent(self: Database, id: i64, content: []const u8) !void {
+        self.conn.exec("UPDATE Timeline_Events SET content = ? WHERE id = ?", .{ content, id }) catch return error.UpdateFailed;
+    }
+
+    pub fn updateTimelineEventPosition(self: Database, id: i64, x: f32, y: f32) !void {
+        self.conn.exec("UPDATE Timeline_Events SET position_x = ?, position_y = ? WHERE id = ?", .{ x, y, id }) catch return error.UpdateFailed;
+    }
+
+    pub fn deleteTimelineEvent(self: Database, id: i64) !void {
+        self.conn.exec("DELETE FROM Timeline_Events WHERE id = ?", .{id}) catch return error.DeleteFailed;
+    }
+
+    // Event Connections
+    pub fn listEventConnectionsForCase(self: Database, case_id: i64, allocator: std.mem.Allocator) !std.ArrayList(types.EventConnection) {
+        var list: std.ArrayList(types.EventConnection) = .empty;
+        var rows = self.conn.rows(
+            \\SELECT ec.id, ec.from_id, ec.to_id, COALESCE(ec.connection_type, '')
+            \\FROM Event_Connections ec
+            \\JOIN Timeline_Events te ON te.id = ec.from_id
+            \\WHERE te.case_id = ?
+            ,
+            .{case_id},
+        ) catch return error.QueryFailed;
+        defer rows.deinit();
+        while (rows.next()) |row| {
+            const id = row.int(0);
+            const from_id = row.int(1);
+            const to_id = row.int(2);
+            const connection_type = allocator.dupe(u8, row.text(3)) catch return error.OutOfMemory;
+            list.append(allocator, .{ .id = id, .from_id = from_id, .to_id = to_id, .connection_type = connection_type }) catch return error.OutOfMemory;
+        }
+        if (rows.err) |err| return err;
+        return list;
+    }
+
+    pub fn createEventConnection(self: Database, from_id: i64, to_id: i64, connection_type: []const u8) !i64 {
+        self.conn.exec(
+            "INSERT INTO Event_Connections (from_id, to_id, connection_type) VALUES (?, ?, ?)",
+            .{ from_id, to_id, connection_type },
+        ) catch return error.InsertFailed;
+        return self.conn.lastInsertedRowId();
+    }
+
+    pub fn deleteEventConnection(self: Database, id: i64) !void {
+        self.conn.exec("DELETE FROM Event_Connections WHERE id = ?", .{id}) catch return error.DeleteFailed;
+    }
+
     // Node positions
     pub fn listNodePositions(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.NodePos) {
         var list: std.ArrayList(types.NodePos) = .empty;
