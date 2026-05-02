@@ -6,8 +6,8 @@
 
     .dependencies = .{
         .dvui = .{
-            .url = "git+https://github.com/david-vanderson/dvui?ref=zig16-dev#bae985c9204425b522ca9cefeabe419b2583d6b4",
-            .hash = "dvui-0.5.0-dev-AQFJmU8H3QD876M89wLtO5VlbiryNRbs8UqKLtUs5vzN",
+            .url = "git+https://github.com/david-vanderson/dvui?ref=main#10a89cc95c5a465502548e44d98ab13bf74cfbae",
+            .hash = "dvui-0.5.0-dev-AQFJmScK3wCUBv_XTLkIbB0TGlRTk3_1DDbSgmyPMRt6",
         },
         .zqlite = .{
             .url = "git+https://github.com/karlseguin/zqlite.zig?ref=master#974fff239ad62700f11f6d8be0f6a6712f71a2d8",
@@ -16,6 +16,10 @@
         .known_folders = .{
             .url = "git+https://github.com/ziglibs/known-folders#5865fd0f1bc5241de8355fcf2066692bf1b0ea02",
             .hash = "known_folders-0.0.0-Fy-PJpLKAAAmMEnwre7fFcfsxBGULd24N8Bp2pWEu3sf",
+        },
+        .xcode_frameworks = .{
+            .url = "git+https://codeberg.org/brodo/xcode-frameworks.git#82eab3c21a3dcdda650f7efa5fc20443b60025d3",
+            .hash = "xcode_frameworks-0.0.0-VCh8gjFEqxH5LL-77V2VU4w314bCOzPE65_-WVNyD-52",
         },
     },
 

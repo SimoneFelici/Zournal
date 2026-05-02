@@ -1,9 +1,45 @@
 const std = @import("std");
 
-pub fn build(b: *std.Build) void {
+const targets: []const std.Target.Query = &.{
+    .{ .cpu_arch = .x86_64, .os_tag = .linux },
+    .{ .cpu_arch = .aarch64, .os_tag = .linux },
+    .{ .cpu_arch = .aarch64, .os_tag = .macos },
+    .{ .cpu_arch = .x86_64, .os_tag = .macos },
+    .{ .cpu_arch = .x86_64, .os_tag = .windows },
+    .{ .cpu_arch = .aarch64, .os_tag = .windows },
+};
+
+pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const exe = setupExe(b, target, optimize);
+    b.installArtifact(exe);
+
+    const run_step = b.step("run", "Run the app");
+    const run_cmd = b.addRunArtifact(exe);
+    run_step.dependOn(&run_cmd.step);
+    run_cmd.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_cmd.addArgs(args);
+    }
+
+    const prod_step = b.step("prod", "Build for all platforms");
+    for (targets) |t| {
+        const prod_target = b.resolveTargetQuery(t);
+        const prod_exe = setupExe(b, prod_target, optimize);
+        const install = b.addInstallArtifact(prod_exe, .{
+            .dest_dir = .{ .override = .{ .custom = try t.zigTriple(b.allocator) } },
+        });
+        prod_step.dependOn(&install.step);
+    }
+}
+
+fn setupExe(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+) *std.Build.Step.Compile {
     const exe = b.addExecutable(.{
         .name = "Zournal",
         .root_module = b.createModule(.{
@@ -43,9 +79,33 @@ pub fn build(b: *std.Build) void {
     exe.root_module.addImport("zqlite", zqlite.module("zqlite"));
 
     // DVUI
-    const dvui_dep = b.dependency("dvui", .{ .target = target, .optimize = optimize, .backend = .sdl3 });
-    exe.root_module.addImport("dvui", dvui_dep.module("dvui_sdl3"));
-    exe.root_module.addImport("sdl-backend", dvui_dep.module("sdl3"));
+    switch (target.result.os.tag) {
+        .macos => {
+            const xcode_frameworks = b.dependency("xcode_frameworks", .{});
+            const dvui_dep = b.dependency("dvui", .{
+                .target = target,
+                .optimize = optimize,
+                .backend = .sdl3,
+                .system_include_path = xcode_frameworks.path("include"),
+                .system_framework_path = xcode_frameworks.path("Frameworks"),
+                .library_path = xcode_frameworks.path("lib"),
+            });
+            exe.root_module.addImport("dvui", dvui_dep.module("dvui_sdl3"));
+            exe.root_module.addImport("sdl-backend", dvui_dep.module("sdl3"));
+            exe.root_module.addFrameworkPath(xcode_frameworks.path("Frameworks"));
+            exe.root_module.addSystemIncludePath(xcode_frameworks.path("include"));
+            exe.root_module.addLibraryPath(xcode_frameworks.path("lib"));
+        },
+        else => {
+            const dvui_dep = b.dependency("dvui", .{
+                .target = target,
+                .optimize = optimize,
+                .backend = .sdl3,
+            });
+            exe.root_module.addImport("dvui", dvui_dep.module("dvui_sdl3"));
+            exe.root_module.addImport("sdl-backend", dvui_dep.module("sdl3"));
+        },
+    }
 
     // Known Folders
     const known_folders = b.dependency("known_folders", .{
@@ -54,16 +114,5 @@ pub fn build(b: *std.Build) void {
     }).module("known-folders");
     exe.root_module.addImport("known-folders", known_folders);
 
-    b.installArtifact(exe);
-
-    const run_step = b.step("run", "Run the app");
-
-    const run_cmd = b.addRunArtifact(exe);
-    run_step.dependOn(&run_cmd.step);
-
-    run_cmd.step.dependOn(b.getInstallStep());
-
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
+    return exe;
 }
