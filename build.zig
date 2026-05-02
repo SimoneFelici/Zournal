@@ -31,11 +31,11 @@ pub fn build(b: *std.Build) !void {
 
         const triple = try t.zigTriple(b.allocator);
         const ext = if (t.os_tag == .windows) ".exe" else "";
-        const out_name = b.fmt("Zournal-{s}{s}", .{ triple, ext });
+        const exe_name = b.fmt("Zournal{s}", .{ext});
 
         const install = b.addInstallArtifact(prod_exe, .{
-            .dest_dir = .{ .override = .{ .custom = "." } },
-            .dest_sub_path = out_name,
+            .dest_dir = .{ .override = .{ .custom = triple } },
+            .dest_sub_path = exe_name,
             .pdb_dir = .disabled,
         });
         prod_step.dependOn(&install.step);
