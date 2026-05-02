@@ -28,8 +28,15 @@ pub fn build(b: *std.Build) !void {
     for (targets) |t| {
         const prod_target = b.resolveTargetQuery(t);
         const prod_exe = setupExe(b, prod_target, optimize);
+
+        const triple = try t.zigTriple(b.allocator);
+        const ext = if (t.os_tag == .windows) ".exe" else "";
+        const out_name = b.fmt("Zournal-{s}{s}", .{ triple, ext });
+
         const install = b.addInstallArtifact(prod_exe, .{
-            .dest_dir = .{ .override = .{ .custom = try t.zigTriple(b.allocator) } },
+            .dest_dir = .{ .override = .{ .custom = "." } },
+            .dest_sub_path = out_name,
+            .pdb_dir = .disabled,
         });
         prod_step.dependOn(&install.step);
     }
