@@ -26,6 +26,9 @@ pub const dvui_app: dvui.App = .{
             .size = .{ .w = 800.0, .h = 600.0 },
             // .min_size = .{ .w = 500.0, .h = 350.0 },
             .title = "Zournal",
+            .window_init_options = .{
+                .theme = dvui.Theme.builtin.adwaita_dark,
+            },
         },
     },
     .frameFn = AppFrame,
