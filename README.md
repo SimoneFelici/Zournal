@@ -2,7 +2,7 @@
 
 A journal app for detective/mistery games written in [Zig](https://codeberg.org/ziglang/zig).
 
-https://github.com/user-attachments/assets/da2578a0-a952-48e0-9657-1850d28f59b1
+https://github.com/user-attachments/assets/595b612c-91d8-4041-95b7-99821cee31ab
 
 ## Info
 
