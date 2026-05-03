@@ -130,7 +130,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                 defer te.deinit();
 
                 const current = te.textGet();
-                if (current.len == 0 and s.notes.items[idx].content.len > 0) {
+                if (current.len == 0 and s.notes.items[idx].content.len > 0 and dvui.focusedWidgetId() != te.data().id) {
                     te.textSet(s.notes.items[idx].content, false);
                 }
 

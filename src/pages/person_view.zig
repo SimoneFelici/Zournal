@@ -146,7 +146,7 @@ pub fn render(ctx: *AppContext, db: db_utils.Database, person_view: *?state.Pers
                 defer te.deinit();
 
                 const current = te.textGet();
-                if (current.len == 0 and pv.notes.items[idx].content.len > 0) {
+                if (current.len == 0 and pv.notes.items[idx].content.len > 0 and dvui.focusedWidgetId() != te.data().id) {
                     te.textSet(pv.notes.items[idx].content, false);
                 }
 

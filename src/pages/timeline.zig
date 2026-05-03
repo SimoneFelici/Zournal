@@ -299,7 +299,7 @@ pub fn render(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseViewS
             {
                 var te_title = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
                 const current_title = te_title.textGet();
-                if (current_title.len == 0 and ts.events.items[idx].label.len > 0) {
+                if (current_title.len == 0 and ts.events.items[idx].label.len > 0 and dvui.focusedWidgetId() != te_title.data().id) {
                     te_title.textSet(ts.events.items[idx].label, false);
                 }
                 const new_title = te_title.textGet();
@@ -317,7 +317,7 @@ pub fn render(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseViewS
                 defer te.deinit();
 
                 const current = te.textGet();
-                if (current.len == 0 and ts.events.items[idx].content.len > 0) {
+                if (current.len == 0 and ts.events.items[idx].content.len > 0 and dvui.focusedWidgetId() != te.data().id) {
                     te.textSet(ts.events.items[idx].content, false);
                 }
                 const text = te.textGet();

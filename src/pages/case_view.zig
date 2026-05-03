@@ -37,7 +37,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
         if (cv.rename_dialog) {
             var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
             const current = te.textGet();
-            if (current.len == 0 and cv.case_name.len > 0) {
+            if (current.len == 0 and cv.case_name.len > 0 and dvui.focusedWidgetId() != te.data().id) {
                 te.textSet(cv.case_name, false);
             }
             const new_name = te.textGet();
@@ -380,7 +380,7 @@ fn renderNotes(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseView
                 defer te.deinit();
 
                 const current = te.textGet();
-                if (current.len == 0 and cv.notes.items[idx].content.len > 0) {
+                if (current.len == 0 and cv.notes.items[idx].content.len > 0 and dvui.focusedWidgetId() != te.data().id) {
                     te.textSet(cv.notes.items[idx].content, false);
                 }
 
