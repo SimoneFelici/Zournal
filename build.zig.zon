@@ -10,8 +10,8 @@
             .hash = "dvui-0.5.0-dev-AQFJmawN3wBxRm7gkeXDz2ujtz-groENWKb6OI4_nXR8",
         },
         .zqlite = .{
-            .url = "git+https://github.com/karlseguin/zqlite.zig?ref=master#974fff239ad62700f11f6d8be0f6a6712f71a2d8",
-            .hash = "zqlite-0.0.1-RWLaY54wnADXf3IHDF7M9IuypBzUHjYO9tOGU8xnogTg",
+            .url = "git+https://github.com/karlseguin/zqlite.zig?ref=master#5ac4cabe95a6d7faa7baf0da8057a8e6e8a227a1",
+            .hash = "zqlite-0.0.1-RWLaY64xnAAxsD2YNT8QqPMJUuaFv2GOzFRR4aGypJv3",
         },
         .known_folders = .{
             .url = "git+https://github.com/ziglibs/known-folders#5865fd0f1bc5241de8355fcf2066692bf1b0ea02",
