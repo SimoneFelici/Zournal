@@ -55,6 +55,7 @@ fn setupExe(
             .optimize = optimize,
             .link_libc = true,
         }),
+        .use_llvm = true,
     });
 
     // zqlite
