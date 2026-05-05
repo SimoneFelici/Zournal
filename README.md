@@ -48,5 +48,3 @@ zig build -Doptimize=ReleaseFast
 - Linux: `~/.local/share/Zournal/`
 - Windows: `~/Library/Application Support/Zournal/`
 - Macos: `%APPDATA%\Zournal\`
-
-TEST
