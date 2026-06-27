@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/595b612c-91d8-4041-95b7-99821cee31ab
 
 ## Info
 
-Detective games often give you a lot of info to keep in your head: suspects, clues, events, alibis, locations, contradictions, and relationships.
+Detective games give you a lot of information to keep track of.
 
 **Zournal** aims to keep everything in one place:
 - Create investigation projects
@@ -14,7 +14,6 @@ Detective games often give you a lot of info to keep in your head: suspects, clu
 - Track people and suspects
 - Write case notes and person-specific notes
 - Visualize relationships between people
-- Build timelines of events and connect them together
 
 ## Features
 
@@ -28,7 +27,7 @@ Detective games often give you a lot of info to keep in your head: suspects, clu
 - [ ] Suspect management with role/status colors, like [The Séance of Blake Manor](https://store.steampowered.com/app/1395520/The_Sance_of_Blake_Manor/)
 
 ## Download
-Download the latest version of **Zournal** from the releases [page](https://github.com/SimoneFelici/Zournal/releases/latest).
+Download the latest version of **Zournal** from the [releases page](https://github.com/SimoneFelici/Zournal/releases/latest).
 
 ## Building from source
 
