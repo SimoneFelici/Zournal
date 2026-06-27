@@ -33,7 +33,17 @@ pub const dvui_app: dvui.App = .{
     },
     .frameFn = AppFrame,
     .initFn = AppInit,
+    .deinitFn = AppDeinit,
 };
+
+fn AppDeinit() void {
+    app_ctx.environ_map.deinit();
+
+    const result = gpa.deinit();
+    if (result == .leak) {
+        std.debug.print("Memory leaks detected.\n", .{});
+    }
+}
 
 fn AppInit(win: *dvui.Window) !void {
     const sdl_backend: *SDLBackend = @ptrCast(@alignCast(win.backend.impl));
@@ -57,9 +67,8 @@ pub const std_options: std.Options = .{
 };
 
 pub fn AppFrame() !dvui.App.Result {
-    switch (page) {
+    return switch (page) {
         .project_select => try project_select.render(&app_ctx, &page),
         .project_view => try project_view.render(&app_ctx, &page),
-    }
-    return .ok;
+    };
 }

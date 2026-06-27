@@ -6,7 +6,7 @@ const fs = @import("../fs_utils.zig");
 const db_utils = @import("../db_utils.zig");
 const people_page = @import("people.zig");
 
-pub fn render(ctx: *AppContext, page: *state.PageState) !void {
+pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
     var s = &page.project_select;
     const allocator = ctx.allocator;
     const io = ctx.io;
@@ -16,6 +16,16 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
 
     var outer = dvui.box(@src(), .{}, .{ .expand = .both });
     defer outer.deinit();
+
+    {
+        if (dvui.button(@src(), "X", .{ .draw_focus = false }, .{
+            .gravity_x = 1,
+            .color_fill = .red,
+            .min_size_content = .{ .w = 16, .h = 16 },
+        })) {
+            return .close;
+        }
+    }
 
     var main_box = dvui.box(@src(), .{ .dir = .vertical }, .{
         .gravity_x = 0.5,
@@ -62,7 +72,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                     continue;
                 };
                 page.* = .{ .project_view = pv };
-                return;
+                return .ok;
             }
         }
     }
@@ -126,7 +136,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                         } else {
                             std.log.err("Create project failed: {}", .{err});
                         }
-                        return;
+                        return .ok;
                     };
                     const duped = allocator.dupe(u8, name) catch unreachable;
                     s.projects.insert(allocator, 0, .{
@@ -139,4 +149,5 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
             }
         }
     }
+    return .ok;
 }

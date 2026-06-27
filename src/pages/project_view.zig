@@ -9,12 +9,12 @@ const case_view = @import("case_view.zig");
 const person_view = @import("person_view.zig");
 const relationships = @import("relationships.zig");
 
-pub fn render(ctx: *AppContext, page: *state.PageState) !void {
+pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
     var s = &page.project_view;
 
     if (s.case_view != null) {
         try case_view.render(ctx, page);
-        return;
+        return .ok;
     }
 
     var outer = dvui.box(@src(), .{ .dir = .horizontal }, .{
@@ -55,11 +55,17 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                 }
             }
 
+            // Exit
+            if (dvui.button(@src(), "Exit", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill = .red, .gravity_y = 1 })) {
+                s.db.close();
+                return .close;
+            }
+
             // Back
             if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = .red, .gravity_y = 1 })) {
                 s.db.close();
                 page.* = .{ .project_select = .{} };
-                return;
+                return .ok;
             }
         }
     }
@@ -84,4 +90,5 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
             .relationships => try relationships.render(ctx, page),
         }
     }
+    return .ok;
 }
