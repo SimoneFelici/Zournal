@@ -8,7 +8,10 @@ const people_page = @import("people.zig");
 
 pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
     var s = &page.project_select;
-    const allocator = ctx.allocator;
+    // Arena
+    const allocator = s.allocator();
+    // gpa for temp stuff
+    const temp_allocator = ctx.allocator;
     const io = ctx.io;
 
     if (!s.loaded)
@@ -53,24 +56,32 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
                     std.log.err("Failed to get DB path: {}", .{err});
                     continue;
                 };
-                defer allocator.free(db_path);
+                defer temp_allocator.free(db_path);
 
                 const database = db_utils.Database.open(db_path) catch |err| {
                     std.log.err("Failed to open DB: {}", .{err});
                     continue;
                 };
+
                 database.initSchema() catch |err| {
                     std.log.err("Failed to migrate schema: {}", .{err});
                     database.close();
                     continue;
                 };
 
-                var pv: state.ProjectViewState = .{ .name = entry.name, .db = database };
-                pv.loadAll(allocator) catch |err| {
-                    std.log.err("Failed to load project data: {}", .{err});
+                var pv = state.ProjectViewState.init(temp_allocator, entry.name, database) catch |err| {
+                    std.log.err("Failed to init project view: {}", .{err});
                     database.close();
                     continue;
                 };
+
+                pv.loadAll() catch |err| {
+                    std.log.err("Failed to load project data: {}", .{err});
+                    pv.deinit();
+                    continue;
+                };
+
+                s.deinit();
                 page.* = .{ .project_view = pv };
                 return .ok;
             }
@@ -85,8 +96,8 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
         defer btn_row.deinit();
 
         if (dvui.button(@src(), "Import", .{ .draw_focus = false }, .{ .color_fill = .green, .gravity_x = 0 })) {
-            if (try dvui.native_dialogs.Native.openMultiple(allocator, .{ .title = "Import .db files" })) |paths| {
-                defer allocator.free(paths);
+            if (try dvui.native_dialogs.Native.openMultiple(temp_allocator, .{ .title = "Import .db files" })) |paths| {
+                defer temp_allocator.free(paths);
                 for (paths) |path| {
                     fs.importProject(ctx, path) catch |err| {
                         std.log.err("Import failed: {}", .{err});

@@ -281,7 +281,7 @@ pub const Database = struct {
             \\FROM Event_Connections ec
             \\JOIN Timeline_Events te ON te.id = ec.from_id
             \\WHERE te.case_id = ?
-            ,
+        ,
             .{case_id},
         ) catch return error.QueryFailed;
         defer rows.deinit();

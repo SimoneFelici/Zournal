@@ -1,14 +1,13 @@
 const std = @import("std");
 const dvui = @import("dvui");
-const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const grid = @import("../ui/grid.zig");
 
 const MIN_CARD_WIDTH: f32 = 140;
 
-pub fn render(ctx: *AppContext, page: *state.PageState) !void {
+pub fn render(page: *state.PageState) !void {
     var s = &page.project_view;
-    const allocator = ctx.allocator;
+    const allocator = s.allocator();
 
     // New case
     {

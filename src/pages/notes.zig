@@ -6,9 +6,9 @@ const grid = @import("../ui/grid.zig");
 
 const MIN_CARD_WIDTH: f32 = 180;
 
-pub fn render(ctx: *AppContext, page: *state.PageState) !void {
+pub fn render(page: *state.PageState) !void {
     var s = &page.project_view;
-    const allocator = ctx.allocator;
+    const allocator = s.allocator();
 
     {
         if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {

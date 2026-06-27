@@ -1,6 +1,5 @@
 const std = @import("std");
 const dvui = @import("dvui");
-const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const db_utils = @import("../db_utils.zig");
 const grid = @import("../ui/grid.zig");
@@ -8,8 +7,7 @@ const grid = @import("../ui/grid.zig");
 const AVATAR_SIZE: f32 = 80;
 const MIN_CARD_WIDTH: f32 = 180;
 
-pub fn render(ctx: *AppContext, db: db_utils.Database, person_view: *?state.PersonViewState) !void {
-    const allocator = ctx.allocator;
+pub fn render(db: db_utils.Database, person_view: *?state.PersonViewState, allocator: std.mem.Allocator) !void {
     var pv = &person_view.*.?;
 
     try pv.load(db, allocator);

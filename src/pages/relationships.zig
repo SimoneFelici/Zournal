@@ -1,6 +1,5 @@
 const std = @import("std");
 const dvui = @import("dvui");
-const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const types = @import("../types.zig");
 
@@ -8,10 +7,10 @@ const NODE_SIZE: f32 = 60;
 const HALF: f32 = NODE_SIZE / 2;
 const NODE_W: f32 = NODE_SIZE + 40;
 
-pub fn render(ctx: *AppContext, page: *state.PageState) !void {
+pub fn render(page: *state.PageState) !void {
     var s = &page.project_view;
     var rs = &s.relationships;
-    const allocator = ctx.allocator;
+    const allocator = s.allocator();
 
     try rs.load(s.db, s.people.items, allocator);
 

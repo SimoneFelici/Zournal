@@ -15,7 +15,8 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
     var s = &page.project_view;
     var cv = &s.case_view.?;
 
-    try cv.load(s.db, ctx.allocator);
+    const allocator = s.allocator();
+    try cv.load(s.db, allocator);
 
     var outer = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .both });
     defer outer.deinit();
@@ -49,7 +50,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
                     s.db.renameCase(cv.case_id, new_name) catch |err| {
                         std.log.err("Rename case failed: {}", .{err});
                     };
-                    const duped = ctx.allocator.dupe(u8, new_name) catch unreachable;
+                    const duped = allocator.dupe(u8, new_name) catch unreachable;
                     cv.case_name = duped;
                     for (s.cases.items) |*c| {
                         if (c.id == cv.case_id) {
@@ -113,17 +114,17 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
 
         switch (cv.tab) {
             .people => if (cv.person_view != null)
-                try person_view.render(ctx, s.db, &cv.person_view)
+                try person_view.render(s.db, &cv.person_view, s.allocator())
             else
-                try renderPeople(ctx, s, cv),
-            .notes => try renderNotes(ctx, s, cv),
-            .timeline => try timeline.render(ctx, s, cv),
+                try renderPeople(s, cv),
+            .notes => try renderNotes(s, cv),
+            .timeline => try timeline.render(s, cv),
         }
     }
 }
 
-fn renderPeople(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
-    const allocator = ctx.allocator;
+fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
+    const allocator = s.allocator();
 
     {
         var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
@@ -267,8 +268,8 @@ fn renderPeople(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseVie
     }
 }
 
-fn renderNotes(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
-    const allocator = ctx.allocator;
+fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
+    const allocator = s.allocator();
 
     if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
         cv.new_note_dialog = !cv.new_note_dialog;

@@ -10,27 +10,53 @@ pub const PageState = union(enum) {
 };
 
 pub const ProjectSelectState = struct {
+    arena: std.heap.ArenaAllocator,
+
     projects: std.ArrayList(types.ProjectEntry) = .empty,
     loaded: bool = false,
     new_project_dialog: bool = false,
 
+    pub fn init(parent_allocator: std.mem.Allocator) ProjectSelectState {
+        return .{
+            .arena = std.heap.ArenaAllocator.init(parent_allocator),
+        };
+    }
+
+    pub fn allocator(self: *ProjectSelectState) std.mem.Allocator {
+        return self.arena.allocator();
+    }
+
+    pub fn deinit(self: *ProjectSelectState) void {
+        self.arena.deinit();
+        self.* = undefined;
+    }
+
     pub fn fetchProjects(self: *ProjectSelectState, ctx: *const AppContext) !void {
         if (self.loaded) return;
-        self.projects = try fs.listProjects(ctx);
+
+        var arena_ctx = ctx.*;
+        arena_ctx.allocator = self.allocator();
+
+        self.projects = try fs.listProjects(&arena_ctx);
         self.loaded = true;
     }
 };
 
 pub const ProjectViewState = struct {
+    arena: std.heap.ArenaAllocator,
+
     name: []const u8,
     tab: Tab = .cases,
     db: db_utils.Database,
+
     cases: std.ArrayList(types.CaseEntry) = .empty,
     people: std.ArrayList(types.PersonEntry) = .empty,
     notes: std.ArrayList(types.NoteEntry) = .empty,
+
     new_person_dialog: bool = false,
     new_note_dialog: bool = false,
     open_note_id: ?i64 = null,
+
     case_view: ?CaseViewState = null,
     person_view: ?PersonViewState = null,
     relationships: RelationshipsState = .{},
@@ -42,11 +68,41 @@ pub const ProjectViewState = struct {
         notes,
     };
 
-    pub fn loadAll(self: *ProjectViewState, allocator: std.mem.Allocator) !void {
-        self.cases = try self.db.listCases(allocator);
-        self.people = try self.db.listPeople(allocator);
-        self.notes = try self.db.listNotes(allocator);
-        try self.relationships.load(self.db, self.people.items, allocator);
+    pub fn init(
+        parent_allocator: std.mem.Allocator,
+        project_name: []const u8,
+        db: db_utils.Database,
+    ) !ProjectViewState {
+        var self: ProjectViewState = .{
+            .arena = std.heap.ArenaAllocator.init(parent_allocator),
+            .name = undefined,
+            .db = db,
+        };
+
+        errdefer self.arena.deinit();
+
+        self.name = try self.allocator().dupe(u8, project_name);
+
+        return self;
+    }
+
+    pub fn allocator(self: *ProjectViewState) std.mem.Allocator {
+        return self.arena.allocator();
+    }
+
+    pub fn deinit(self: *ProjectViewState) void {
+        self.db.close();
+        self.arena.deinit();
+        self.* = undefined;
+    }
+
+    pub fn loadAll(self: *ProjectViewState) !void {
+        const a = self.allocator();
+
+        self.cases = try self.db.listCases(a);
+        self.people = try self.db.listPeople(a);
+        self.notes = try self.db.listNotes(a);
+        try self.relationships.load(self.db, self.people.items, a);
     }
 };
 

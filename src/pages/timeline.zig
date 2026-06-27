@@ -13,10 +13,9 @@ fn nodeWidth(label: []const u8) f32 {
     return @max(NODE_MIN_W, @min(NODE_MAX_W, @as(f32, @floatFromInt(label.len)) * CHAR_W + 20.0));
 }
 
-pub fn render(ctx: *AppContext, s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
+pub fn render(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
     var ts = &cv.timeline;
-    const allocator = ctx.allocator;
-
+    const allocator = s.allocator();
     try ts.load(s.db, cv.case_id, allocator);
 
     // Top bar

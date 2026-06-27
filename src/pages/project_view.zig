@@ -63,8 +63,8 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
 
             // Back
             if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = .red, .gravity_y = 1 })) {
-                s.db.close();
-                page.* = .{ .project_select = .{} };
+                s.deinit();
+                page.* = .{ .project_select = state.ProjectSelectState.init(ctx.allocator) };
                 return .ok;
             }
         }
@@ -81,13 +81,13 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
         defer content.deinit();
 
         switch (s.tab) {
-            .cases => try cases.render(ctx, page),
+            .cases => try cases.render(page),
             .people => if (s.person_view != null)
-                try person_view.render(ctx, s.db, &s.person_view)
+                try person_view.render(s.db, &s.person_view, s.allocator())
             else
-                try people.render(ctx, page),
-            .notes => try notes.render(ctx, page),
-            .relationships => try relationships.render(ctx, page),
+                try people.render(page),
+            .notes => try notes.render(page),
+            .relationships => try relationships.render(page),
         }
     }
     return .ok;
