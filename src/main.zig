@@ -44,10 +44,7 @@ fn AppDeinit() void {
 
     app_ctx.environ_map.deinit();
 
-    const result = gpa.deinit();
-    if (result == .leak) {
-        std.debug.print("Memory leaks detected.\n", .{});
-    }
+    _ = gpa.deinit();
 }
 
 fn AppInit(win: *dvui.Window) !void {
