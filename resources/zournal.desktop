@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Zournal
+Comment=A journal app for detective games
+Exec=zournal
+Terminal=false
+Type=Application
+Categories=Utility

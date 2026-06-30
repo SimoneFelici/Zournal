@@ -3,4 +3,3 @@ zig-out/
 zig-pkg/
 *.o
 lib/
-release.sh

@@ -33,12 +33,20 @@ pub fn build(b: *std.Build) !void {
         const ext = if (t.os_tag == .windows) ".exe" else "";
         const exe_name = b.fmt("zournal{s}", .{ext});
 
-        const install = b.addInstallArtifact(prod_exe, .{
-            .dest_dir = .{ .override = .{ .custom = triple } },
-            .dest_sub_path = exe_name,
-            .pdb_dir = .disabled,
-        });
-        prod_step.dependOn(&install.step);
+        const wf = b.addWriteFiles();
+        _ = wf.addCopyFile(prod_exe.getEmittedBin(), exe_name);
+        if (t.os_tag == .linux) {
+            _ = wf.addCopyFile(b.path("resources/zournal.desktop"), "zournal.desktop");
+        }
+
+        const tar = b.addSystemCommand(&.{ "tar", "czf" });
+        tar.setCwd(wf.getDirectory());
+        const archive_name = b.fmt("{s}.tar.gz", .{triple});
+        const archive = tar.addOutputFileArg(archive_name);
+        tar.addArg(".");
+
+        const install_archive = b.addInstallFileWithDir(archive, .prefix, archive_name);
+        prod_step.dependOn(&install_archive.step);
     }
 }
 
