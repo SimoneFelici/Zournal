@@ -31,7 +31,7 @@ pub fn build(b: *std.Build) !void {
 
         const triple = try t.zigTriple(b.allocator);
         const ext = if (t.os_tag == .windows) ".exe" else "";
-        const exe_name = b.fmt("Zournal{s}", .{ext});
+        const exe_name = b.fmt("zournal{s}", .{ext});
 
         const install = b.addInstallArtifact(prod_exe, .{
             .dest_dir = .{ .override = .{ .custom = triple } },
@@ -48,7 +48,7 @@ fn setupExe(
     optimize: std.builtin.OptimizeMode,
 ) *std.Build.Step.Compile {
     const exe = b.addExecutable(.{
-        .name = "Zournal",
+        .name = "zournal",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
