@@ -68,7 +68,7 @@ pub fn render(page: *state.PageState) !void {
                     .min_size_content = .{ .w = NODE_SIZE, .h = NODE_SIZE },
                     .background = true,
                     .style = .control,
-                    .corner_radius = dvui.Rect.all(NODE_SIZE),
+                    .corners = dvui.CornerRect.round(NODE_SIZE),
                     .color_fill = if (is_selected) dvui.Color.blue else null,
                 });
                 defer circle.deinit();
@@ -85,7 +85,7 @@ pub fn render(page: *state.PageState) !void {
                             if (me.button == .left) {
                                 e.handle(@src(), node.data());
                                 dvui.captureMouse(node.data(), e.num);
-                                dvui.dragPreStart(me.p, .{ .cursor = .hand });
+                                dvui.dragPreStart(me.button, me.p, .{ .cursor = .hand });
                                 rs.dragging_id = null;
                             }
                         },

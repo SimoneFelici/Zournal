@@ -62,11 +62,7 @@ pub fn render(db: db_utils.Database, person_view: *?state.PersonViewState, alloc
     // Avatar + name centered
     {
         const avatar = pv.person_initials[0..pv.person_initials_len];
-        _ = dvui.button(@src(), avatar, .{ .draw_focus = false }, .{
-            .gravity_x = 0.5,
-            .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE },
-            .corner_radius = dvui.Rect.all(AVATAR_SIZE),
-        });
+        _ = dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = dvui.CornerRect.round(AVATAR_SIZE) });
         dvui.labelNoFmt(@src(), pv.person_name, .{}, .{ .gravity_x = 0.5 });
     }
 
@@ -97,12 +93,7 @@ pub fn render(db: db_utils.Database, person_view: *?state.PersonViewState, alloc
                 });
                 defer card.deinit();
 
-                if (dvui.button(@src(), pv.notes.items[i].title, .{ .draw_focus = false }, .{
-                    .id_extra = i,
-                    .expand = .horizontal,
-                    .min_size_content = .{ .w = 140, .h = 80 },
-                    .corner_radius = dvui.Rect.all(3),
-                })) {
+                if (dvui.button(@src(), pv.notes.items[i].title, .{ .draw_focus = false }, .{ .id_extra = i, .expand = .horizontal, .min_size_content = .{ .w = 140, .h = 80 }, .corners = dvui.CornerRect.round(3) })) {
                     pv.open_note_id = pv.notes.items[i].id;
                 }
             }

@@ -43,12 +43,7 @@ pub fn render(page: *state.PageState) !void {
                 i += 1;
             }) {
                 const case_entry = s.cases.items[i];
-                if (dvui.button(@src(), case_entry.name, .{ .draw_focus = false }, .{
-                    .id_extra = i,
-                    .expand = .horizontal,
-                    .min_size_content = .{ .w = 120, .h = 80 },
-                    .corner_radius = dvui.Rect.all(3),
-                })) {
+                if (dvui.button(@src(), case_entry.name, .{ .draw_focus = false }, .{ .id_extra = i, .expand = .horizontal, .min_size_content = .{ .w = 120, .h = 80 }, .corners = dvui.CornerRect.round(3) })) {
                     s.case_view = .{
                         .case_id = case_entry.id,
                         .case_name = case_entry.name,
