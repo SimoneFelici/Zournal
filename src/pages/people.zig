@@ -4,8 +4,10 @@ const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const types = @import("../types.zig");
 const grid = @import("../ui/grid.zig");
+const widgets = @import("../ui/widgets.zig");
 
 const MIN_CARD_WIDTH: f32 = 100;
+const MAX_CARD_WIDTH: f32 = 260;
 const AVATAR_SIZE: f32 = 60;
 
 pub fn render(page: *state.PageState) !void {
@@ -51,7 +53,8 @@ pub fn render(page: *state.PageState) !void {
         var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
         defer scroll.deinit();
 
-        const cols = grid.colsFor(scroll.data().rect.w, MIN_CARD_WIDTH);
+        const card_w = widgets.personCardWidth(s.people.items, MIN_CARD_WIDTH, MAX_CARD_WIDTH);
+        const cols = grid.colsFor(scroll.data().rect.w, card_w);
 
         var i: usize = 0;
         var row_idx: usize = 0;
@@ -73,6 +76,7 @@ pub fn render(page: *state.PageState) !void {
                 var card = dvui.box(@src(), .{ .dir = .vertical }, .{
                     .id_extra = idx,
                     .expand = .horizontal,
+                    .min_size_content = .{ .w = card_w },
                 });
                 defer card.deinit();
 
@@ -93,7 +97,7 @@ pub fn render(page: *state.PageState) !void {
                 });
             }
             while (c < cols) : (c += 1) {
-                var spacer = dvui.box(@src(), .{}, .{ .id_extra = c, .expand = .horizontal });
+                var spacer = dvui.box(@src(), .{}, .{ .id_extra = c, .expand = .horizontal, .min_size_content = .{ .w = card_w } });
                 defer spacer.deinit();
             }
         }
