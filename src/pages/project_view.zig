@@ -13,7 +13,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
     var s = &page.project_view;
 
     if (s.case_view != null) {
-        try case_view.render(ctx, page);
+        try case_view.render(page);
         return .ok;
     }
 
@@ -83,7 +83,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
         switch (s.tab) {
             .cases => try cases.render(page),
             .people => if (s.person_view != null)
-                try person_view.render(s.db, &s.person_view, s.allocator())
+                try person_view.render(s, &s.person_view)
             else
                 try people.render(page),
             .notes => try notes.render(page),

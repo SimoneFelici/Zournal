@@ -114,6 +114,8 @@ pub const PersonViewState = struct {
     notes: std.ArrayList(types.NoteEntry) = .empty,
     open_note_id: ?i64 = null,
     new_note_dialog: bool = false,
+    edit_name_dialog: bool = false,
+    delete_person_confirm: bool = false,
     loaded: bool = false,
 
     pub fn load(self: *PersonViewState, db: db_utils.Database, allocator: std.mem.Allocator) !void {

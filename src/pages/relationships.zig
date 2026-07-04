@@ -6,6 +6,12 @@ const types = @import("../types.zig");
 const NODE_SIZE: f32 = 60;
 const HALF: f32 = NODE_SIZE / 2;
 const NODE_W: f32 = NODE_SIZE + 40;
+const NODE_MAX_W: f32 = 220;
+
+fn nodeWidth(name: []const u8) f32 {
+    const text_w = dvui.themeGet().font_body.textSize(name).w;
+    return @max(NODE_W, @min(NODE_MAX_W, text_w + 20.0));
+}
 
 pub fn render(page: *state.PageState) !void {
     var s = &page.project_view;
@@ -35,11 +41,12 @@ pub fn render(page: *state.PageState) !void {
             });
 
             if (rel.label.len > 0) {
-                const mx = (pos_a.x + pos_b.x) / 2 + HALF - 40;
+                const lw = dvui.themeGet().font_body.textSize(rel.label).w + 24.0;
+                const mx = (pos_a.x + pos_b.x) / 2 + HALF - lw / 2;
                 const my = (pos_a.y + pos_b.y) / 2 + HALF - 10;
                 var lbox = dvui.box(@src(), .{}, .{
                     .id_extra = ri,
-                    .rect = dvui.Rect{ .x = mx, .y = my, .w = 100, .h = 28 },
+                    .rect = dvui.Rect{ .x = mx, .y = my, .w = lw, .h = 28 },
                 });
                 defer lbox.deinit();
                 dvui.labelNoFmt(@src(), rel.label, .{}, .{ .gravity_x = 0.5 });
@@ -56,10 +63,12 @@ pub fn render(page: *state.PageState) !void {
 
             const is_selected = rs.selected_id != null and rs.selected_id.? == person.id;
             const avatar = person.initials[0..person.initials_len];
+            const nw = nodeWidth(person.name);
+            const off = (nw - NODE_SIZE) / 2.0;
 
             var node = dvui.box(@src(), .{ .dir = .vertical }, .{
                 .id_extra = i,
-                .rect = dvui.Rect{ .x = pos.x - 20, .y = pos.y, .w = NODE_W },
+                .rect = dvui.Rect{ .x = pos.x - off, .y = pos.y, .w = nw },
             });
 
             {
@@ -113,7 +122,7 @@ pub fn render(page: *state.PageState) !void {
                                     pos.y += dp.y;
                                     const cw = canvas_rs.r.w / canvas_rs.s;
                                     const ch = canvas_rs.r.h / canvas_rs.s;
-                                    pos.x = @max(20.0, @min(pos.x, cw - NODE_W + 20.0));
+                                    pos.x = @max(off, @min(pos.x, cw - nw + off));
                                     pos.y = @max(0.0, @min(pos.y, ch - NODE_SIZE - 24.0));
                                     rs.dragging_id = person.id;
                                 }

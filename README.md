@@ -23,12 +23,11 @@ Detective games give you a lot of information to keep track of.
 - [x] Relationship graph
 - [x] Timeline events
 - [x] An exit button
-- [ ] Edit and remove people
-- [ ] Remove Case and Remove/Edit Project name
-- [ ] Edit people note name
-- [ ] Larger relationships description
+- [x] Edit people note name
+- [ ] Fix people icons
+- [ ] Remove Cases
+- [ ] Add a search person functionality
 - [ ] Open more notes simulatniously (if you exit the person, they close automatically)
-- [ ] When note is too big the buttons disappear (I should remove the save button and add options to delete and modify note title, the edit should be done like the timeline "Edit Event")
 - [ ] Global timeline
 - [ ] Suspect management with role/status colors, like [The Séance of Blake Manor](https://store.steampowered.com/app/1395520/The_Sance_of_Blake_Manor/)
 

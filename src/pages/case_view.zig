@@ -1,9 +1,9 @@
 const std = @import("std");
 const dvui = @import("dvui");
-const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const types = @import("../types.zig");
 const grid = @import("../ui/grid.zig");
+const widgets = @import("../ui/widgets.zig");
 const person_view = @import("person_view.zig");
 const timeline = @import("timeline.zig");
 
@@ -11,7 +11,7 @@ const MIN_CARD_WIDTH_PEOPLE: f32 = 100;
 const MIN_CARD_WIDTH_NOTES: f32 = 180;
 const AVATAR_SIZE: f32 = 60;
 
-pub fn render(ctx: *AppContext, page: *state.PageState) !void {
+pub fn render(page: *state.PageState) !void {
     var s = &page.project_view;
     var cv = &s.case_view.?;
 
@@ -89,13 +89,6 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
 
             if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = .red, .gravity_y = 1 })) {
                 s.db.updateCaseAccess(cv.case_id) catch {};
-                for (s.cases.items, 0..) |c, ci| {
-                    if (c.id == cv.case_id) {
-                        const entry = s.cases.orderedRemove(ci);
-                        s.cases.insert(ctx.allocator, 0, entry) catch {};
-                        break;
-                    }
-                }
                 s.case_view = null;
                 return;
             }
@@ -114,7 +107,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
 
         switch (cv.tab) {
             .people => if (cv.person_view != null)
-                try person_view.render(s.db, &cv.person_view, s.allocator())
+                try person_view.render(s, &cv.person_view)
             else
                 try renderPeople(s, cv),
             .notes => try renderNotes(s, cv),
@@ -352,10 +345,13 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
             });
             defer fw.deinit();
 
-            fw.dragAreaSet(dvui.windowHeader(cv.notes.items[idx].title, "", &show));
+            fw.dragAreaSet(dvui.windowHeader("Edit Note", "", &show));
 
             if (!show) {
                 const note = cv.notes.items[idx];
+                s.db.updateNoteTitle(note.id, note.title) catch |err| {
+                    std.log.err("Save note title failed: {}", .{err});
+                };
                 s.db.updateNoteContent(note.id, note.content) catch |err| {
                     std.log.err("Save note failed: {}", .{err});
                 };
@@ -363,39 +359,18 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 return;
             }
 
+            // Title + delete
             {
-                var te = dvui.textEntry(@src(), .{ .multiline = true }, .{
-                    .expand = .both,
-                    .min_size_content = .{ .w = 380, .h = 250 },
-                });
-                defer te.deinit();
+                var top_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
+                defer top_row.deinit();
 
-                const current = te.textGet();
-                if (current.len == 0 and cv.notes.items[idx].content.len > 0 and dvui.focusedWidgetId() != te.data().id) {
-                    te.textSet(cv.notes.items[idx].content, false);
+                {
+                    var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
+                    defer te.deinit();
+                    widgets.syncText(te, &cv.notes.items[idx].title, allocator);
                 }
 
-                const text = te.textGet();
-                if (text.len > 0 or cv.notes.items[idx].content.len > 0) {
-                    if (!std.mem.eql(u8, text, cv.notes.items[idx].content)) {
-                        const duped = allocator.dupe(u8, text) catch unreachable;
-                        cv.notes.items[idx].content = duped;
-                    }
-                }
-            }
-
-            {
-                var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
-                defer btn_row.deinit();
-
-                if (dvui.button(@src(), "Save", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 0 })) {
-                    const note = cv.notes.items[idx];
-                    s.db.updateNoteContent(note.id, note.content) catch |err| {
-                        std.log.err("Save note failed: {}", .{err});
-                    };
-                }
-
-                if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .color_fill_hover = .red, .gravity_x = 1 })) {
+                if (dvui.buttonIcon(@src(), "Delete Note", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .color_fill = .red, .gravity_y = 0.5 })) {
                     const note = cv.notes.items[idx];
                     s.db.deleteNote(note.id) catch |err| {
                         std.log.err("Delete note failed: {}", .{err});
@@ -403,7 +378,18 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                     };
                     _ = cv.notes.orderedRemove(idx);
                     cv.open_note_id = null;
+                    return;
                 }
+            }
+
+            // Content
+            {
+                var te = dvui.textEntry(@src(), .{ .multiline = true }, .{
+                    .expand = .both,
+                    .min_size_content = .{ .w = 380, .h = 250 },
+                });
+                defer te.deinit();
+                widgets.syncText(te, &cv.notes.items[idx].content, allocator);
             }
         } else {
             cv.open_note_id = null;

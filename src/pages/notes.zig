@@ -3,6 +3,7 @@ const dvui = @import("dvui");
 const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const grid = @import("../ui/grid.zig");
+const widgets = @import("../ui/widgets.zig");
 
 const MIN_CARD_WIDTH: f32 = 180;
 
@@ -106,10 +107,13 @@ pub fn render(page: *state.PageState) !void {
             });
             defer fw.deinit();
 
-            fw.dragAreaSet(dvui.windowHeader(s.notes.items[idx].title, "", &show));
+            fw.dragAreaSet(dvui.windowHeader("Edit Note", "", &show));
 
             if (!show) {
                 const note = s.notes.items[idx];
+                s.db.updateNoteTitle(note.id, note.title) catch |err| {
+                    std.log.err("Save note title failed: {}", .{err});
+                };
                 s.db.updateNoteContent(note.id, note.content) catch |err| {
                     std.log.err("Save note failed: {}", .{err});
                 };
@@ -117,49 +121,36 @@ pub fn render(page: *state.PageState) !void {
                 return;
             }
 
+            // Title + delete
+            {
+                var top_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
+                defer top_row.deinit();
+
+                {
+                    var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
+                    defer te.deinit();
+                    widgets.syncText(te, &s.notes.items[idx].title, allocator);
+                }
+
+                if (dvui.buttonIcon(@src(), "Delete Note", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .color_fill = .red, .gravity_y = 0.5 })) {
+                    s.db.deleteNote(note_id) catch |err| {
+                        std.log.err("Delete note failed: {}", .{err});
+                        return;
+                    };
+                    _ = s.notes.orderedRemove(idx);
+                    s.open_note_id = null;
+                    return;
+                }
+            }
+
+            // Content
             {
                 var te = dvui.textEntry(@src(), .{ .multiline = true }, .{
                     .expand = .both,
                     .min_size_content = .{ .w = 380, .h = 250 },
                 });
                 defer te.deinit();
-
-                const current = te.textGet();
-                if (current.len == 0 and s.notes.items[idx].content.len > 0 and dvui.focusedWidgetId() != te.data().id) {
-                    te.textSet(s.notes.items[idx].content, false);
-                }
-
-                const text = te.textGet();
-                if (text.len > 0 or s.notes.items[idx].content.len > 0) {
-                    if (!std.mem.eql(u8, text, s.notes.items[idx].content)) {
-                        const duped = allocator.dupe(u8, text) catch unreachable;
-                        s.notes.items[idx].content = duped;
-                    }
-                }
-            }
-
-            {
-                var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{
-                    .expand = .horizontal,
-                });
-                defer btn_row.deinit();
-
-                if (dvui.button(@src(), "Save", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 0 })) {
-                    const note = s.notes.items[idx];
-                    s.db.updateNoteContent(note.id, note.content) catch |err| {
-                        std.log.err("Save note failed: {}", .{err});
-                    };
-                }
-
-                if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .color_fill_hover = .red, .gravity_x = 1 })) {
-                    const note = s.notes.items[idx];
-                    s.db.deleteNote(note.id) catch |err| {
-                        std.log.err("Delete note failed: {}", .{err});
-                        return;
-                    };
-                    _ = s.notes.orderedRemove(idx);
-                    s.open_note_id = null;
-                }
+                widgets.syncText(te, &s.notes.items[idx].content, allocator);
             }
         } else {
             s.open_note_id = null;

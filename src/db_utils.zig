@@ -25,7 +25,7 @@ pub const Database = struct {
     pub fn listCases(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.CaseEntry) {
         var cases: std.ArrayList(types.CaseEntry) = .empty;
 
-        var rows = self.conn.rows("SELECT id, c_name FROM Cases ORDER BY last_access DESC", .{}) catch return error.QueryFailed;
+        var rows = self.conn.rows("SELECT id, c_name FROM Cases ORDER BY id DESC", .{}) catch return error.QueryFailed;
         defer rows.deinit();
 
         while (rows.next()) |row| {
@@ -194,6 +194,10 @@ pub const Database = struct {
     pub fn createPersonNote(self: Database, person_id: i64, title: []const u8) !i64 {
         self.conn.exec("INSERT INTO Person_Notes (person_id, title, content) VALUES (?, ?, '')", .{ person_id, title }) catch return error.InsertFailed;
         return self.conn.lastInsertedRowId();
+    }
+
+    pub fn updatePersonNoteTitle(self: Database, id: i64, title: []const u8) !void {
+        self.conn.exec("UPDATE Person_Notes SET title = ? WHERE id = ?", .{ title, id }) catch return error.UpdateFailed;
     }
 
     pub fn updatePersonNoteContent(self: Database, id: i64, content: []const u8) !void {
