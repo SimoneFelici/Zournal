@@ -24,7 +24,6 @@ pub const dvui_app: dvui.App = .{
     .config = .{
         .options = .{
             .size = .{ .w = 800.0, .h = 600.0 },
-            // .min_size = .{ .w = 500.0, .h = 350.0 },
             .title = "Zournal",
             .window_init_options = .{
                 .theme = dvui.Theme.builtin.adwaita_dark,
@@ -48,8 +47,7 @@ fn AppDeinit() void {
 }
 
 fn AppInit(win: *dvui.Window) !void {
-    const sdl_backend: *SDLBackend = @ptrCast(@alignCast(win.backend.impl));
-    _ = SDLBackend.c.SDL_MaximizeWindow(sdl_backend.window);
+    _ = win;
 
     const allocator = gpa.allocator();
     const environ_map = try processEnviron().createMap(allocator);
