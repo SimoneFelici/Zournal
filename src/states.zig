@@ -185,6 +185,7 @@ pub const CaseViewState = struct {
     import_person_dialog: bool = false,
     new_note_dialog: bool = false,
     rename_dialog: bool = false,
+    delete_case_confirm: bool = false,
     open_note_id: ?i64 = null,
     person_view: ?PersonViewState = null,
     loaded: bool = false,

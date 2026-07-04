@@ -24,8 +24,8 @@ Detective games give you a lot of information to keep track of.
 - [x] Timeline events
 - [x] An exit button
 - [x] Edit people note name
+- [x] Remove Cases
 - [ ] Fix people icons
-- [ ] Remove Cases
 - [ ] Add a search person functionality
 - [ ] Open more notes simulatniously (if you exit the person, they close automatically)
 - [ ] Global timeline

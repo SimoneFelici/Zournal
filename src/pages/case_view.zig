@@ -32,6 +32,11 @@ pub fn render(page: *state.PageState) !void {
             dvui.label(@src(), "{s}", .{cv.case_name}, .{ .gravity_y = 0.5 });
             if (dvui.buttonIcon(@src(), "Rename", dvui.entypo.edit, .{ .draw_focus = false }, .{}, .{})) {
                 cv.rename_dialog = !cv.rename_dialog;
+                cv.delete_case_confirm = false;
+            }
+            if (dvui.buttonIcon(@src(), "Delete Case", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .color_fill = .red })) {
+                cv.delete_case_confirm = !cv.delete_case_confirm;
+                cv.rename_dialog = false;
             }
         }
 
@@ -60,6 +65,30 @@ pub fn render(page: *state.PageState) !void {
                     }
                     cv.rename_dialog = false;
                 }
+            }
+        }
+
+        if (cv.delete_case_confirm) {
+            dvui.labelNoFmt(@src(), "Delete this case?", .{}, .{ .gravity_x = 0.5 });
+            dvui.labelNoFmt(@src(), "Notes and timeline included.", .{}, .{ .gravity_x = 0.5 });
+
+            if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{ .expand = .horizontal })) {
+                cv.delete_case_confirm = false;
+            }
+
+            if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill = .red })) {
+                s.db.deleteCase(cv.case_id) catch |err| {
+                    std.log.err("Delete case failed: {}", .{err});
+                    return;
+                };
+                for (s.cases.items, 0..) |c, ci| {
+                    if (c.id == cv.case_id) {
+                        _ = s.cases.orderedRemove(ci);
+                        break;
+                    }
+                }
+                s.case_view = null;
+                return;
             }
         }
 

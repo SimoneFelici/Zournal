@@ -51,6 +51,11 @@ pub const Database = struct {
         self.conn.exec("UPDATE Cases SET last_access = strftime('%Y-%m-%dT%H:%M:%S', 'now') WHERE id = ?", .{id}) catch return error.UpdateFailed;
     }
 
+    pub fn deleteCase(self: Database, id: i64) !void {
+        self.conn.exec("DELETE FROM Notes WHERE case_id = ?", .{id}) catch return error.DeleteFailed;
+        self.conn.exec("DELETE FROM Cases WHERE id = ?", .{id}) catch return error.DeleteFailed;
+    }
+
     // People
     pub fn listPeople(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.PersonEntry) {
         var people: std.ArrayList(types.PersonEntry) = .empty;
