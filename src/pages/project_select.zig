@@ -42,7 +42,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
         var scroll = dvui.scrollArea(@src(), .{}, .{
             .expand = .horizontal,
             .max_size_content = .{ .w = 9999, .h = 250 },
-            .corner_radius = dvui.Rect.all(3),
+            .corners = dvui.CornerRect.round(3),
         });
         defer scroll.deinit();
 
@@ -50,7 +50,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
             if (dvui.button(@src(), entry.name, .{ .draw_focus = false }, .{
                 .id_extra = i,
                 .expand = .horizontal,
-                .corner_radius = dvui.Rect.all(2),
+                .corners = dvui.CornerRect.round(2),
             })) {
                 const db_path = fs.getProjectPath(ctx, entry.name) catch |err| {
                     std.log.err("Failed to get DB path: {}", .{err});

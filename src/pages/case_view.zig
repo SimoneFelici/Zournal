@@ -74,7 +74,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !void {
             };
 
             for (tab_entries) |entry| {
-                var tab = tabs.addTab(cv.tab == entry.tab, .{ .expand = .horizontal });
+                var tab = tabs.addTab(cv.tab == entry.tab, .{ .process_events = true }, .{ .expand = .horizontal });
                 defer tab.deinit();
                 switch (entry.tab) {
                     .people => dvui.label(@src(), "People ({d})", .{cv.people.items.len}, .{}),
@@ -242,12 +242,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
 
             const avatar = person.initials[0..person.initials_len];
 
-            if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{
-                .id_extra = idx,
-                .gravity_x = 0.5,
-                .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE },
-                .corner_radius = dvui.Rect.all(AVATAR_SIZE),
-            })) {
+            if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .id_extra = idx, .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = dvui.CornerRect.round(AVATAR_SIZE) })) {
                 cv.person_view = .{
                     .person_id = person.id,
                     .person_name = person.name,
@@ -333,12 +328,7 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 });
                 defer card.deinit();
 
-                if (dvui.button(@src(), cv.notes.items[i].title, .{ .draw_focus = false }, .{
-                    .id_extra = i,
-                    .expand = .horizontal,
-                    .min_size_content = .{ .w = 140, .h = 80 },
-                    .corner_radius = dvui.Rect.all(3),
-                })) {
+                if (dvui.button(@src(), cv.notes.items[i].title, .{ .draw_focus = false }, .{ .id_extra = i, .expand = .horizontal, .min_size_content = .{ .w = 140, .h = 80 }, .corners = dvui.CornerRect.round(3) })) {
                     cv.open_note_id = cv.notes.items[i].id;
                 }
             }

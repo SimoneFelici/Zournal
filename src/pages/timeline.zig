@@ -112,7 +112,7 @@ pub fn render(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 .rect = dvui.Rect{ .x = evt.x, .y = evt.y, .w = nw },
                 .background = true,
                 .style = .control,
-                .corner_radius = dvui.Rect.all(4),
+                .corners = dvui.CornerRect.round(4),
                 .color_fill = if (is_selected) dvui.Color.blue else null,
             });
 
@@ -126,7 +126,7 @@ pub fn render(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                             if (me.button == .left) {
                                 e.handle(@src(), node.data());
                                 dvui.captureMouse(node.data(), e.num);
-                                dvui.dragPreStart(me.p, .{ .cursor = .hand });
+                                dvui.dragPreStart(me.button, me.p, .{ .cursor = .hand });
                                 ts.dragging_id = null;
                             }
                         },

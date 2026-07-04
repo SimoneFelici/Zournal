@@ -6,8 +6,8 @@
 
     .dependencies = .{
         .dvui = .{
-            .url = "git+https://github.com/david-vanderson/dvui?ref=main#b5ea62896c973daa2c88fc9253706cb14c5165df",
-            .hash = "dvui-0.5.0-dev-AQFJmawN3wBxRm7gkeXDz2ujtz-groENWKb6OI4_nXR8",
+            .url = "git+https://github.com/david-vanderson/dvui?ref=main#cb88aab988ce1f58cde799ac85fc0d732c7efe5d",
+            .hash = "dvui-0.5.0-dev-AQFJmd5g-gB3N3gY1uc8brV-DSffUBV_d2Sx03ZNyTqp",
         },
         .zqlite = .{
             .url = "git+https://github.com/karlseguin/zqlite.zig?ref=master#5ac4cabe95a6d7faa7baf0da8057a8e6e8a227a1",
