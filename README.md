@@ -22,7 +22,6 @@ Detective games give you a lot of information to keep track of.
 - [x] Notes
 - [x] Relationship graph
 - [x] Timeline events
-- [x] An exit button
 - [x] Edit people note name
 - [x] Remove Cases
 - [x] Fix people icons

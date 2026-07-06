@@ -55,12 +55,6 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
                 }
             }
 
-            // Exit
-            if (dvui.button(@src(), "Exit", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill = .red, .gravity_y = 1 })) {
-                s.db.close();
-                return .close;
-            }
-
             // Back
             if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = .red, .gravity_y = 1 })) {
                 s.deinit();

@@ -20,16 +20,6 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
     var outer = dvui.box(@src(), .{}, .{ .expand = .both });
     defer outer.deinit();
 
-    {
-        if (dvui.button(@src(), "X", .{ .draw_focus = false }, .{
-            .gravity_x = 1,
-            .color_fill = .red,
-            .min_size_content = .{ .w = 16, .h = 16 },
-        })) {
-            return .close;
-        }
-    }
-
     var main_box = dvui.box(@src(), .{ .dir = .vertical }, .{
         .gravity_x = 0.5,
         .gravity_y = 0.5,
