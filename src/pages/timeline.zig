@@ -168,6 +168,7 @@ fn renderEditDialog(s: *state.ProjectViewState, ts: *state.TimelineState) void {
 
     var show = true;
     var fw = dvui.floatingWindow(@src(), .{}, .{
+        .id_extra = @as(usize, @intCast(eid)),
         .min_size_content = .{ .w = 420, .h = 360 },
     });
     defer fw.deinit();

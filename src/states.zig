@@ -55,7 +55,7 @@ pub const ProjectViewState = struct {
 
     new_person_dialog: bool = false,
     new_note_dialog: bool = false,
-    open_note_id: ?i64 = null,
+    open_notes: std.ArrayList(i64) = .empty,
 
     case_view: ?CaseViewState = null,
     person_view: ?PersonViewState = null,
@@ -112,7 +112,7 @@ pub const PersonViewState = struct {
     person_initials: [2]u8 = .{ 0, 0 },
     person_initials_len: u2 = 0,
     notes: std.ArrayList(types.NoteEntry) = .empty,
-    open_note_id: ?i64 = null,
+    open_notes: std.ArrayList(i64) = .empty,
     new_note_dialog: bool = false,
     edit_name_dialog: bool = false,
     delete_person_confirm: bool = false,
@@ -186,7 +186,7 @@ pub const CaseViewState = struct {
     new_note_dialog: bool = false,
     rename_dialog: bool = false,
     delete_case_confirm: bool = false,
-    open_note_id: ?i64 = null,
+    open_notes: std.ArrayList(i64) = .empty,
     person_view: ?PersonViewState = null,
     loaded: bool = false,
 

@@ -330,7 +330,7 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                     .content = duped_content,
                 }) catch unreachable;
                 cv.new_note_dialog = false;
-                cv.open_note_id = id;
+                cv.open_notes.append(allocator, id) catch unreachable;
             }
         }
     }
@@ -367,13 +367,19 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 defer card.deinit();
 
                 if (dvui.button(@src(), widgets.fitText(cv.notes.items[i].title, CARD_W_NOTES - 16), .{ .draw_focus = false }, .{ .id_extra = i, .min_size_content = .{ .w = CARD_W_NOTES, .h = CARD_H_NOTES }, .corners = dvui.CornerRect.round(3) })) {
-                    cv.open_note_id = cv.notes.items[i].id;
+                    const nid = cv.notes.items[i].id;
+                    const already = for (cv.open_notes.items) |oid| {
+                        if (oid == nid) break true;
+                    } else false;
+                    if (!already) cv.open_notes.append(allocator, nid) catch unreachable;
                 }
             }
         }
     }
 
-    if (cv.open_note_id) |note_id| {
+    var oi: usize = 0;
+    while (oi < cv.open_notes.items.len) {
+        const note_id = cv.open_notes.items[oi];
         const note_idx = for (cv.notes.items, 0..) |n, idx| {
             if (n.id == note_id) break idx;
         } else null;
@@ -381,6 +387,7 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
         if (note_idx) |idx| {
             var show = true;
             var fw = dvui.floatingWindow(@src(), .{}, .{
+                .id_extra = @as(usize, @intCast(note_id)),
                 .min_size_content = .{ .w = 400, .h = 300 },
                 .max_size_content = .{ .w = 600, .h = 500 },
             });
@@ -396,8 +403,8 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 s.db.updateNoteContent(note.id, note.content) catch |err| {
                     std.log.err("Save note failed: {}", .{err});
                 };
-                cv.open_note_id = null;
-                return;
+                _ = cv.open_notes.orderedRemove(oi);
+                continue;
             }
 
             // Title + delete
@@ -418,8 +425,8 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                         return;
                     };
                     _ = cv.notes.orderedRemove(idx);
-                    cv.open_note_id = null;
-                    return;
+                    _ = cv.open_notes.orderedRemove(oi);
+                    continue;
                 }
             }
 
@@ -432,8 +439,9 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 defer te.deinit();
                 widgets.syncText(te, &cv.notes.items[idx].content, allocator);
             }
+            oi += 1;
         } else {
-            cv.open_note_id = null;
+            _ = cv.open_notes.orderedRemove(oi);
         }
     }
 }

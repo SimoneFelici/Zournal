@@ -116,7 +116,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
                     .content = duped_content,
                 }) catch unreachable;
                 pv.new_note_dialog = false;
-                pv.open_note_id = id;
+                pv.open_notes.append(allocator, id) catch unreachable;
             }
         }
     }
@@ -236,13 +236,19 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
                 defer card.deinit();
 
                 if (dvui.button(@src(), widgets.fitText(pv.notes.items[i].title, CARD_W - 16), .{ .draw_focus = false }, .{ .id_extra = i, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = dvui.CornerRect.round(3) })) {
-                    pv.open_note_id = pv.notes.items[i].id;
+                    const nid = pv.notes.items[i].id;
+                    const already = for (pv.open_notes.items) |oid| {
+                        if (oid == nid) break true;
+                    } else false;
+                    if (!already) pv.open_notes.append(allocator, nid) catch unreachable;
                 }
             }
         }
     }
 
-    if (pv.open_note_id) |note_id| {
+    var oi: usize = 0;
+    while (oi < pv.open_notes.items.len) {
+        const note_id = pv.open_notes.items[oi];
         const note_idx = for (pv.notes.items, 0..) |n, idx| {
             if (n.id == note_id) break idx;
         } else null;
@@ -250,6 +256,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         if (note_idx) |idx| {
             var show = true;
             var fw = dvui.floatingWindow(@src(), .{}, .{
+                .id_extra = @as(usize, @intCast(note_id)),
                 .min_size_content = .{ .w = 400, .h = 300 },
                 .max_size_content = .{ .w = 600, .h = 500 },
             });
@@ -264,8 +271,8 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
                 db.updatePersonNoteContent(note_id, pv.notes.items[idx].content) catch |err| {
                     std.log.err("Save person note failed: {}", .{err});
                 };
-                pv.open_note_id = null;
-                return;
+                _ = pv.open_notes.orderedRemove(oi);
+                continue;
             }
 
             // Title + delete
@@ -285,8 +292,8 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
                         return;
                     };
                     _ = pv.notes.orderedRemove(idx);
-                    pv.open_note_id = null;
-                    return;
+                    _ = pv.open_notes.orderedRemove(oi);
+                    continue;
                 }
             }
 
@@ -299,8 +306,9 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
                 defer te.deinit();
                 widgets.syncText(te, &pv.notes.items[idx].content, allocator);
             }
+            oi += 1;
         } else {
-            pv.open_note_id = null;
+            _ = pv.open_notes.orderedRemove(oi);
         }
     }
 }

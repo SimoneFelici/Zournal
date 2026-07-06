@@ -54,7 +54,7 @@ pub fn render(page: *state.PageState) !void {
                     .content = duped_content,
                 }) catch unreachable;
                 s.new_note_dialog = false;
-                s.open_note_id = id;
+                s.open_notes.append(allocator, id) catch unreachable;
             }
         }
     }
@@ -95,14 +95,20 @@ pub fn render(page: *state.PageState) !void {
                     defer card.deinit();
 
                     if (dvui.button(@src(), widgets.fitText(note.title, CARD_W - 16), .{ .draw_focus = false }, .{ .id_extra = i, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = dvui.CornerRect.round(3) })) {
-                        s.open_note_id = note.id;
+                        const nid = note.id;
+                        const already = for (s.open_notes.items) |oid| {
+                            if (oid == nid) break true;
+                        } else false;
+                        if (!already) s.open_notes.append(allocator, nid) catch unreachable;
                     }
                 }
             }
         }
     }
 
-    if (s.open_note_id) |note_id| {
+    var oi: usize = 0;
+    while (oi < s.open_notes.items.len) {
+        const note_id = s.open_notes.items[oi];
         const note_idx = for (s.notes.items, 0..) |n, idx| {
             if (n.id == note_id) break idx;
         } else null;
@@ -110,6 +116,7 @@ pub fn render(page: *state.PageState) !void {
         if (note_idx) |idx| {
             var show = true;
             var fw = dvui.floatingWindow(@src(), .{}, .{
+                .id_extra = @as(usize, @intCast(note_id)),
                 .min_size_content = .{ .w = 400, .h = 300 },
                 .max_size_content = .{ .w = 600, .h = 500 },
             });
@@ -125,8 +132,8 @@ pub fn render(page: *state.PageState) !void {
                 s.db.updateNoteContent(note.id, note.content) catch |err| {
                     std.log.err("Save note failed: {}", .{err});
                 };
-                s.open_note_id = null;
-                return;
+                _ = s.open_notes.orderedRemove(oi);
+                continue;
             }
 
             // Title + delete
@@ -146,8 +153,8 @@ pub fn render(page: *state.PageState) !void {
                         return;
                     };
                     _ = s.notes.orderedRemove(idx);
-                    s.open_note_id = null;
-                    return;
+                    _ = s.open_notes.orderedRemove(oi);
+                    continue;
                 }
             }
 
@@ -160,8 +167,9 @@ pub fn render(page: *state.PageState) !void {
                 defer te.deinit();
                 widgets.syncText(te, &s.notes.items[idx].content, allocator);
             }
+            oi += 1;
         } else {
-            s.open_note_id = null;
+            _ = s.open_notes.orderedRemove(oi);
         }
     }
 }
