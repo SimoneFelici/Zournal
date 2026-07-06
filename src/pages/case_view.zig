@@ -7,8 +7,11 @@ const widgets = @import("../ui/widgets.zig");
 const person_view = @import("person_view.zig");
 const timeline = @import("timeline.zig");
 
-const MIN_CARD_WIDTH_PEOPLE: f32 = 100;
-const MIN_CARD_WIDTH_NOTES: f32 = 180;
+const CARD_W_PEOPLE: f32 = 140;
+const CARD_SLOT_PEOPLE: f32 = CARD_W_PEOPLE + 12;
+const CARD_W_NOTES: f32 = 200;
+const CARD_H_NOTES: f32 = 80;
+const CARD_SLOT_NOTES: f32 = CARD_W_NOTES + 24;
 const AVATAR_SIZE: f32 = 60;
 
 pub fn render(page: *state.PageState) !void {
@@ -69,8 +72,7 @@ pub fn render(page: *state.PageState) !void {
         }
 
         if (cv.delete_case_confirm) {
-            dvui.labelNoFmt(@src(), "Delete this case?", .{}, .{ .gravity_x = 0.5 });
-            dvui.labelNoFmt(@src(), "Notes and timeline included.", .{}, .{ .gravity_x = 0.5 });
+            dvui.labelNoFmt(@src(), "Are you sure?", .{}, .{ .gravity_x = 0.5 });
 
             if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{ .expand = .horizontal })) {
                 cv.delete_case_confirm = false;
@@ -148,6 +150,7 @@ pub fn render(page: *state.PageState) !void {
 fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
     const allocator = s.allocator();
 
+    var grid_search_open = false;
     {
         var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
         defer btn_row.deinit();
@@ -156,6 +159,8 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
             cv.import_person_dialog = !cv.import_person_dialog;
             cv.new_person_dialog = false;
         }
+
+        grid_search_open = widgets.searchToggle(@src());
 
         if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
             cv.new_person_dialog = !cv.new_person_dialog;
@@ -206,16 +211,17 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
             return;
         }
 
+        const query = widgets.searchBox(@src());
+
         var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
         defer scroll.deinit();
 
-        var any = false;
         for (s.people.items, 0..) |person, i| {
             const in_case = for (cv.people.items) |cp| {
                 if (cp.id == person.id) break true;
             } else false;
             if (in_case) continue;
-            any = true;
+            if (query.len > 0 and std.ascii.indexOfIgnoreCase(person.name, query) == null) continue;
 
             if (dvui.button(@src(), person.name, .{ .draw_focus = false }, .{
                 .id_extra = i,
@@ -228,20 +234,21 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 cv.people.append(allocator, person) catch unreachable;
             }
         }
-
-        if (!any) {
-            dvui.label(@src(), "No people to import", .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 });
-        }
     }
+
+    const grid_query: []const u8 = if (grid_search_open) widgets.searchEntry(@src()) else "";
 
     var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
     defer scroll.deinit();
 
-    const cols = grid.colsFor(scroll.data().rect.w, MIN_CARD_WIDTH_PEOPLE);
+    const cols = grid.colsFor(scroll.data().rect.w, CARD_SLOT_PEOPLE);
 
     var i: usize = 0;
     var row_idx: usize = 0;
+    var shown: usize = 0;
     while (i < cv.people.items.len) : (row_idx += 1) {
+        while (i < cv.people.items.len and !widgets.matches(cv.people.items[i].name, grid_query)) i += 1;
+        if (i >= cv.people.items.len) break;
         var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
             .id_extra = row_idx,
             .expand = .horizontal,
@@ -249,16 +256,16 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
         defer row.deinit();
 
         var c: usize = 0;
-        while (c < cols and i < cv.people.items.len) : ({
-            c += 1;
-            i += 1;
-        }) {
+        while (c < cols and i < cv.people.items.len) : (i += 1) {
             const person = cv.people.items[i];
+            if (!widgets.matches(person.name, grid_query)) continue;
+            c += 1;
+            shown += 1;
             const idx = i;
 
             var card = dvui.box(@src(), .{ .dir = .vertical }, .{
                 .id_extra = idx,
-                .expand = .horizontal,
+                .min_size_content = .{ .w = CARD_W_PEOPLE },
             });
             defer card.deinit();
 
@@ -273,14 +280,10 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 };
             }
 
-            dvui.labelNoFmt(@src(), person.name, .{}, .{
+            dvui.labelNoFmt(@src(), widgets.fitText(person.name, CARD_W_PEOPLE - 8.0), .{}, .{
                 .id_extra = idx,
                 .gravity_x = 0.5,
             });
-        }
-        while (c < cols) : (c += 1) {
-            var spacer = dvui.box(@src(), .{}, .{ .id_extra = c, .expand = .horizontal });
-            defer spacer.deinit();
         }
     }
 }
@@ -288,8 +291,16 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
 fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
     const allocator = s.allocator();
 
-    if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
-        cv.new_note_dialog = !cv.new_note_dialog;
+    var search_open = false;
+    {
+        var top_bar = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
+        defer top_bar.deinit();
+
+        search_open = widgets.searchToggle(@src());
+
+        if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
+            cv.new_note_dialog = !cv.new_note_dialog;
+        }
     }
 
     if (cv.new_note_dialog) {
@@ -324,15 +335,20 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
         }
     }
 
+    const query: []const u8 = if (search_open) widgets.searchEntry(@src()) else "";
+
     {
         var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
         defer scroll.deinit();
 
-        const cols = grid.colsFor(scroll.data().rect.w, MIN_CARD_WIDTH_NOTES);
+        const cols = grid.colsFor(scroll.data().rect.w, CARD_SLOT_NOTES);
 
         var i: usize = 0;
         var row_idx: usize = 0;
+        var shown: usize = 0;
         while (i < cv.notes.items.len) : (row_idx += 1) {
+            while (i < cv.notes.items.len and !widgets.matches(cv.notes.items[i].title, query)) i += 1;
+            if (i >= cv.notes.items.len) break;
             var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
                 .id_extra = row_idx,
                 .expand = .horizontal,
@@ -340,23 +356,19 @@ fn renderNotes(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
             defer row.deinit();
 
             var c: usize = 0;
-            while (c < cols and i < cv.notes.items.len) : ({
+            while (c < cols and i < cv.notes.items.len) : (i += 1) {
+                if (!widgets.matches(cv.notes.items[i].title, query)) continue;
                 c += 1;
-                i += 1;
-            }) {
+                shown += 1;
+
                 var card = dvui.box(@src(), .{ .dir = .vertical }, .{
                     .id_extra = i,
-                    .expand = .horizontal,
                 });
                 defer card.deinit();
 
-                if (dvui.button(@src(), cv.notes.items[i].title, .{ .draw_focus = false }, .{ .id_extra = i, .expand = .horizontal, .min_size_content = .{ .w = 140, .h = 80 }, .corners = dvui.CornerRect.round(3) })) {
+                if (dvui.button(@src(), widgets.fitText(cv.notes.items[i].title, CARD_W_NOTES - 16), .{ .draw_focus = false }, .{ .id_extra = i, .min_size_content = .{ .w = CARD_W_NOTES, .h = CARD_H_NOTES }, .corners = dvui.CornerRect.round(3) })) {
                     cv.open_note_id = cv.notes.items[i].id;
                 }
-            }
-            while (c < cols) : (c += 1) {
-                var spacer = dvui.box(@src(), .{}, .{ .id_extra = c, .expand = .horizontal });
-                defer spacer.deinit();
             }
         }
     }

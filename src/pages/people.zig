@@ -6,15 +6,21 @@ const types = @import("../types.zig");
 const grid = @import("../ui/grid.zig");
 const widgets = @import("../ui/widgets.zig");
 
-const MIN_CARD_WIDTH: f32 = 100;
-const MAX_CARD_WIDTH: f32 = 260;
+const CARD_W: f32 = 140;
+const CARD_SLOT: f32 = CARD_W + 12;
 const AVATAR_SIZE: f32 = 60;
 
 pub fn render(page: *state.PageState) !void {
     var s = &page.project_view;
     const allocator = s.allocator();
 
+    var search_open = false;
     {
+        var top_bar = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
+        defer top_bar.deinit();
+
+        search_open = widgets.searchToggle(@src());
+
         if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
             s.new_person_dialog = !s.new_person_dialog;
         }
@@ -48,17 +54,21 @@ pub fn render(page: *state.PageState) !void {
         }
     }
 
-    // People wall
+    const query: []const u8 = if (search_open) widgets.searchEntry(@src()) else "";
+
     {
         var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
         defer scroll.deinit();
 
-        const card_w = widgets.personCardWidth(s.people.items, MIN_CARD_WIDTH, MAX_CARD_WIDTH);
-        const cols = grid.colsFor(scroll.data().rect.w, card_w);
+        const cols = grid.colsFor(scroll.data().rect.w, CARD_SLOT);
 
         var i: usize = 0;
         var row_idx: usize = 0;
+        var shown: usize = 0;
         while (i < s.people.items.len) : (row_idx += 1) {
+            while (i < s.people.items.len and !widgets.matches(s.people.items[i].name, query)) i += 1;
+            if (i >= s.people.items.len) break;
+
             var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
                 .id_extra = row_idx,
                 .expand = .horizontal,
@@ -66,17 +76,16 @@ pub fn render(page: *state.PageState) !void {
             defer row.deinit();
 
             var c: usize = 0;
-            while (c < cols and i < s.people.items.len) : ({
-                c += 1;
-                i += 1;
-            }) {
+            while (c < cols and i < s.people.items.len) : (i += 1) {
                 const person = s.people.items[i];
+                if (!widgets.matches(person.name, query)) continue;
+                c += 1;
+                shown += 1;
                 const idx = i;
 
                 var card = dvui.box(@src(), .{ .dir = .vertical }, .{
                     .id_extra = idx,
-                    .expand = .horizontal,
-                    .min_size_content = .{ .w = card_w },
+                    .min_size_content = .{ .w = CARD_W },
                 });
                 defer card.deinit();
 
@@ -91,14 +100,10 @@ pub fn render(page: *state.PageState) !void {
                     };
                 }
 
-                dvui.labelNoFmt(@src(), person.name, .{}, .{
+                dvui.labelNoFmt(@src(), widgets.fitText(person.name, CARD_W - 8.0), .{}, .{
                     .id_extra = idx,
                     .gravity_x = 0.5,
                 });
-            }
-            while (c < cols) : (c += 1) {
-                var spacer = dvui.box(@src(), .{}, .{ .id_extra = c, .expand = .horizontal, .min_size_content = .{ .w = card_w } });
-                defer spacer.deinit();
             }
         }
     }

@@ -7,7 +7,9 @@ const grid = @import("../ui/grid.zig");
 const widgets = @import("../ui/widgets.zig");
 
 const AVATAR_SIZE: f32 = 80;
-const MIN_CARD_WIDTH: f32 = 180;
+const CARD_W: f32 = 200;
+const CARD_H: f32 = 80;
+const CARD_SLOT: f32 = CARD_W + 24;
 
 fn syncPersonName(s: *state.ProjectViewState, person_id: i64, name: []const u8) void {
     for (s.people.items) |*p| {
@@ -70,6 +72,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
     try pv.load(db, allocator);
 
     // Top bar: back (left) + new note (right)
+    var search_open = false;
     {
         var top_bar = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
         defer top_bar.deinit();
@@ -78,6 +81,8 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
             person_view.* = null;
             return;
         }
+
+        search_open = widgets.searchToggle(@src());
 
         if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
             pv.new_note_dialog = !pv.new_note_dialog;
@@ -198,16 +203,21 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         }
     }
 
+    const query: []const u8 = if (search_open) widgets.searchEntry(@src()) else "";
+
     // Notes grid
     {
         var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
         defer scroll.deinit();
 
-        const cols = grid.colsFor(scroll.data().rect.w, MIN_CARD_WIDTH);
+        const cols = grid.colsFor(scroll.data().rect.w, CARD_SLOT);
 
         var i: usize = 0;
         var row_idx: usize = 0;
+        var shown: usize = 0;
         while (i < pv.notes.items.len) : (row_idx += 1) {
+            while (i < pv.notes.items.len and !widgets.matches(pv.notes.items[i].title, query)) i += 1;
+            if (i >= pv.notes.items.len) break;
             var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
                 .id_extra = row_idx,
                 .expand = .horizontal,
@@ -215,23 +225,19 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
             defer row.deinit();
 
             var c: usize = 0;
-            while (c < cols and i < pv.notes.items.len) : ({
+            while (c < cols and i < pv.notes.items.len) : (i += 1) {
+                if (!widgets.matches(pv.notes.items[i].title, query)) continue;
                 c += 1;
-                i += 1;
-            }) {
+                shown += 1;
+
                 var card = dvui.box(@src(), .{ .dir = .vertical }, .{
                     .id_extra = i,
-                    .expand = .horizontal,
                 });
                 defer card.deinit();
 
-                if (dvui.button(@src(), pv.notes.items[i].title, .{ .draw_focus = false }, .{ .id_extra = i, .expand = .horizontal, .min_size_content = .{ .w = 140, .h = 80 }, .corners = dvui.CornerRect.round(3) })) {
+                if (dvui.button(@src(), widgets.fitText(pv.notes.items[i].title, CARD_W - 16), .{ .draw_focus = false }, .{ .id_extra = i, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = dvui.CornerRect.round(3) })) {
                     pv.open_note_id = pv.notes.items[i].id;
                 }
-            }
-            while (c < cols) : (c += 1) {
-                var spacer = dvui.box(@src(), .{}, .{ .id_extra = c, .expand = .horizontal });
-                defer spacer.deinit();
             }
         }
     }
