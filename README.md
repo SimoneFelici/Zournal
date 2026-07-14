@@ -27,6 +27,7 @@ Detective games give you a lot of information to keep track of.
 - [x] Fix people icons
 - [x] Add a search functionality
 - [x] Open more notes simultaneously (if you exit the person, they close automatically)
+- [ ] Import notes?
 - [ ] Global timeline?
 - [ ] Suspect management with role/status colors, like [The Séance of Blake Manor](https://store.steampowered.com/app/1395520/The_Sance_of_Blake_Manor/)
 
