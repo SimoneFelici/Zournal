@@ -49,6 +49,6 @@ zig build -Doptimize=ReleaseFast
 ```
 
 ## Database location:
-- Linux: `~/.local/share/Zournal/`
-- Windows: `~/Library/Application Support/Zournal/`
-- Macos: `%APPDATA%\Zournal\`
+- Linux: `$HOME/.local/share/Zournal/`
+- Windows: `%LOCALAPPDATA%\Temp\`
+- Macos: `$HOME/Library/Application Support/`
