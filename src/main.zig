@@ -35,7 +35,8 @@ pub const dvui_app: dvui.App = .{
     .deinitFn = AppDeinit,
 };
 
-fn AppDeinit() void {
+fn AppDeinit(win: *dvui.Window) void {
+    _ = win;
     switch (page) {
         .project_select => page.project_select.deinit(),
         .project_view => page.project_view.deinit(),
