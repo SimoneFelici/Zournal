@@ -2,14 +2,9 @@ const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
 const types = @import("../types.zig");
-const db_utils = @import("../db_utils.zig");
-const grid = @import("../ui/grid.zig");
-const widgets = @import("../ui/widgets.zig");
+const notes_view = @import("../ui/notes_view.zig");
 
 const AVATAR_SIZE: f32 = 80;
-const CARD_W: f32 = 200;
-const CARD_H: f32 = 80;
-const CARD_SLOT: f32 = CARD_W + 24;
 
 fn syncPersonName(s: *state.ProjectViewState, person_id: i64, name: []const u8) void {
     for (s.people.items) |*p| {
@@ -69,59 +64,19 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
     const db = s.db;
     const allocator = s.allocator();
 
-    try pv.load(db, allocator);
-
-    // Top bar: back (left) + new note (right)
-    var search_open = false;
+    // Top bar
     {
         var top_bar = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
         defer top_bar.deinit();
 
         if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .color_fill_hover = .red })) {
+            pv.notes.flushOpen(db);
             person_view.* = null;
             return;
         }
-
-        search_open = widgets.searchToggle(@src());
-
-        if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
-            pv.new_note_dialog = !pv.new_note_dialog;
-        }
     }
 
-    if (pv.new_note_dialog) {
-        var dialog_box = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
-        defer dialog_box.deinit();
-
-        var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
-        const title = te.textGet();
-        const enter = te.enter_pressed;
-        te.deinit();
-
-        if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{})) {
-            pv.new_note_dialog = false;
-        }
-
-        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue }) or enter) {
-            if (title.len > 0) {
-                const id = db.createPersonNote(pv.person_id, title) catch |err| {
-                    std.log.err("Create person note failed: {}", .{err});
-                    return;
-                };
-                const duped_title = allocator.dupe(u8, title) catch unreachable;
-                const duped_content = allocator.dupe(u8, "") catch unreachable;
-                pv.notes.insert(allocator, 0, .{
-                    .id = id,
-                    .title = duped_title,
-                    .content = duped_content,
-                }) catch unreachable;
-                pv.new_note_dialog = false;
-                pv.open_notes.append(allocator, id) catch unreachable;
-            }
-        }
-    }
-
-    // Avatar
+    // Avatar + name
     {
         const avatar = pv.person_initials[0..pv.person_initials_len];
         _ = dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = dvui.CornerRect.round(AVATAR_SIZE) });
@@ -185,7 +140,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         var confirm_box = dvui.box(@src(), .{ .dir = .horizontal }, .{ .gravity_x = 0.5 });
         defer confirm_box.deinit();
 
-        dvui.labelNoFmt(@src(), "Delete this person and all their notes?", .{}, .{ .gravity_y = 0.5 });
+        dvui.labelNoFmt(@src(), "Delete this person?", .{}, .{ .gravity_y = 0.5 });
 
         if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{})) {
             pv.delete_person_confirm = false;
@@ -198,117 +153,11 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
                 return;
             };
             removePersonFromState(s, person_id);
+            pv.notes.flushOpen(db);
             person_view.* = null;
             return;
         }
     }
 
-    const query: []const u8 = if (search_open) widgets.searchEntry(@src()) else "";
-
-    // Notes grid
-    {
-        var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
-        defer scroll.deinit();
-
-        const cols = grid.colsFor(scroll.data().rect.w, CARD_SLOT);
-
-        var i: usize = 0;
-        var row_idx: usize = 0;
-        var shown: usize = 0;
-        while (i < pv.notes.items.len) : (row_idx += 1) {
-            while (i < pv.notes.items.len and !widgets.matches(pv.notes.items[i].title, query)) i += 1;
-            if (i >= pv.notes.items.len) break;
-            var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
-                .id_extra = row_idx,
-                .expand = .horizontal,
-            });
-            defer row.deinit();
-
-            var c: usize = 0;
-            while (c < cols and i < pv.notes.items.len) : (i += 1) {
-                if (!widgets.matches(pv.notes.items[i].title, query)) continue;
-                c += 1;
-                shown += 1;
-
-                var card = dvui.box(@src(), .{ .dir = .vertical }, .{
-                    .id_extra = i,
-                });
-                defer card.deinit();
-
-                if (dvui.button(@src(), widgets.fitText(pv.notes.items[i].title, CARD_W - 16), .{ .draw_focus = false }, .{ .id_extra = i, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = dvui.CornerRect.round(3) })) {
-                    const nid = pv.notes.items[i].id;
-                    const already = for (pv.open_notes.items) |oid| {
-                        if (oid == nid) break true;
-                    } else false;
-                    if (!already) pv.open_notes.append(allocator, nid) catch unreachable;
-                }
-            }
-        }
-    }
-
-    var oi: usize = 0;
-    while (oi < pv.open_notes.items.len) {
-        const note_id = pv.open_notes.items[oi];
-        const note_idx = for (pv.notes.items, 0..) |n, idx| {
-            if (n.id == note_id) break idx;
-        } else null;
-
-        if (note_idx) |idx| {
-            var show = true;
-            var fw = dvui.floatingWindow(@src(), .{}, .{
-                .id_extra = @as(usize, @intCast(note_id)),
-                .min_size_content = .{ .w = 400, .h = 300 },
-                .max_size_content = .{ .w = 600, .h = 500 },
-            });
-            defer fw.deinit();
-
-            fw.dragAreaSet(dvui.windowHeader("Edit Note", "", &show));
-
-            if (!show) {
-                db.updatePersonNoteTitle(note_id, pv.notes.items[idx].title) catch |err| {
-                    std.log.err("Save person note title failed: {}", .{err});
-                };
-                db.updatePersonNoteContent(note_id, pv.notes.items[idx].content) catch |err| {
-                    std.log.err("Save person note failed: {}", .{err});
-                };
-                _ = pv.open_notes.orderedRemove(oi);
-                continue;
-            }
-
-            // Title + delete
-            {
-                var top_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
-                defer top_row.deinit();
-
-                {
-                    var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
-                    defer te.deinit();
-                    widgets.syncText(te, &pv.notes.items[idx].title, allocator);
-                }
-
-                if (dvui.buttonIcon(@src(), "Delete Note", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .color_fill = .red, .gravity_y = 0.5 })) {
-                    db.deletePersonNote(note_id) catch |err| {
-                        std.log.err("Delete person note failed: {}", .{err});
-                        return;
-                    };
-                    _ = pv.notes.orderedRemove(idx);
-                    _ = pv.open_notes.orderedRemove(oi);
-                    continue;
-                }
-            }
-
-            // Content
-            {
-                var te = dvui.textEntry(@src(), .{ .multiline = true }, .{
-                    .expand = .both,
-                    .min_size_content = .{ .w = 380, .h = 250 },
-                });
-                defer te.deinit();
-                widgets.syncText(te, &pv.notes.items[idx].content, allocator);
-            }
-            oi += 1;
-        } else {
-            _ = pv.open_notes.orderedRemove(oi);
-        }
-    }
+    try notes_view.render(&pv.notes, db, allocator);
 }

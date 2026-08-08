@@ -92,12 +92,7 @@ pub fn render(page: *state.PageState) !void {
                 const avatar = person.initials[0..person.initials_len];
 
                 if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .id_extra = idx, .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = dvui.CornerRect.round(AVATAR_SIZE) })) {
-                    s.person_view = .{
-                        .person_id = person.id,
-                        .person_name = person.name,
-                        .person_initials = person.initials,
-                        .person_initials_len = person.initials_len,
-                    };
+                    s.person_view = state.PersonViewState.init(person, null);
                 }
 
                 dvui.labelNoFmt(@src(), widgets.fitText(person.name, CARD_W - 8.0), .{}, .{

@@ -46,12 +46,14 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
                 switch (entry.tab) {
                     .cases => dvui.label(@src(), "Cases ({d})", .{s.cases.items.len}, .{}),
                     .people => dvui.label(@src(), "People ({d})", .{s.people.items.len}, .{}),
-                    .notes => dvui.label(@src(), "Notes ({d})", .{s.notes.items.len}, .{}),
+                    .notes => dvui.label(@src(), "Notes ({d})", .{s.notes.notes.items.len}, .{}),
                     .relationships => dvui.label(@src(), "Relationships ({d})", .{s.relationships.relationships.items.len}, .{}),
                 }
                 if (tab.clicked()) {
                     s.tab = entry.tab;
+                    if (s.person_view) |*pv| pv.notes.flushOpen(s.db);
                     s.person_view = null;
+                    s.notes.reload(s.db, s.allocator());
                 }
             }
 
@@ -76,10 +78,12 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
 
         switch (s.tab) {
             .cases => try cases.render(page),
-            .people => if (s.person_view != null)
-                try person_view.render(s, &s.person_view)
-            else
-                try people.render(page),
+            .people => if (s.person_view != null) {
+                try person_view.render(s, &s.person_view);
+                if (s.person_view == null) s.notes.reload(s.db, s.allocator());
+            } else {
+                try people.render(page);
+            },
             .notes => try notes.render(page),
             .relationships => try relationships.render(page),
         }

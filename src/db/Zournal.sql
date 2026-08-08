@@ -11,12 +11,6 @@ CREATE TABLE IF NOT EXISTS "People" (
 	PRIMARY KEY("id")
 );
 
-CREATE TABLE IF NOT EXISTS "Relationships_Types" (
-	"id" INTEGER NOT NULL UNIQUE,
-	"rel_name" TEXT NOT NULL UNIQUE,
-	PRIMARY KEY("id")
-);
-
 CREATE TABLE IF NOT EXISTS "People_Cases" (
 	"id" INTEGER NOT NULL UNIQUE,
 	"people_id" INTEGER NOT NULL,
@@ -31,35 +25,13 @@ CREATE TABLE IF NOT EXISTS "People_Cases" (
 CREATE UNIQUE INDEX IF NOT EXISTS "People_Cases_index_0"
 ON "People_Cases" ("people_id", "case_id");
 
-CREATE TABLE IF NOT EXISTS "Relationships" (
-	"id" INTEGER NOT NULL UNIQUE,
-	"person1_id" INTEGER NOT NULL,
-	"person2_id" INTEGER NOT NULL,
-	"type_id" INTEGER NOT NULL,
-	"is_mutual" INTEGER NOT NULL CHECK ("is_mutual" IN (0, 1)),
-	PRIMARY KEY("id"),
-	FOREIGN KEY ("person1_id") REFERENCES "People"("id")
-		ON UPDATE NO ACTION ON DELETE CASCADE,
-	FOREIGN KEY ("person2_id") REFERENCES "People"("id")
-		ON UPDATE NO ACTION ON DELETE CASCADE,
-	FOREIGN KEY ("type_id") REFERENCES "Relationships_Types"("id")
-		ON UPDATE NO ACTION ON DELETE RESTRICT
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS "Relationships_unique"
-ON "Relationships" ("person1_id", "person2_id", "type_id");
-
-CREATE INDEX IF NOT EXISTS "Relationships_person1"
-ON "Relationships" ("person1_id");
-
-CREATE INDEX IF NOT EXISTS "Relationships_person2"
-ON "Relationships" ("person2_id");
-
 CREATE TABLE IF NOT EXISTS "Notes" (
 	"id" INTEGER NOT NULL UNIQUE,
 	"case_id" INTEGER,
 	"title" TEXT NOT NULL DEFAULT 'Untitled',
 	"content" TEXT NOT NULL DEFAULT '',
+	"created_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now')),
+	"updated_at" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now')),
 	PRIMARY KEY("id"),
 	FOREIGN KEY ("case_id") REFERENCES "Cases"("id")
 		ON UPDATE NO ACTION ON DELETE CASCADE
@@ -67,6 +39,9 @@ CREATE TABLE IF NOT EXISTS "Notes" (
 
 CREATE INDEX IF NOT EXISTS "Notes_case"
 ON "Notes" ("case_id");
+
+CREATE INDEX IF NOT EXISTS "Notes_updated"
+ON "Notes" ("updated_at" DESC);
 
 CREATE TABLE IF NOT EXISTS "Note_People" (
 	"id" INTEGER NOT NULL UNIQUE,
@@ -81,6 +56,9 @@ CREATE TABLE IF NOT EXISTS "Note_People" (
 
 CREATE UNIQUE INDEX IF NOT EXISTS "Note_People_index_0"
 ON "Note_People" ("note_id", "person_id");
+
+CREATE INDEX IF NOT EXISTS "Note_People_person"
+ON "Note_People" ("person_id");
 
 CREATE TABLE IF NOT EXISTS "Timeline_Events" (
 	"id" INTEGER NOT NULL UNIQUE,
@@ -131,19 +109,6 @@ ON "Event_Connections" ("from_id");
 
 CREATE INDEX IF NOT EXISTS "Event_Connections_to"
 ON "Event_Connections" ("to_id");
-
-CREATE TABLE IF NOT EXISTS "Person_Notes" (
-	"id" INTEGER NOT NULL UNIQUE,
-	"person_id" INTEGER NOT NULL,
-	"title" TEXT NOT NULL DEFAULT 'Untitled',
-	"content" TEXT NOT NULL DEFAULT '',
-	PRIMARY KEY("id"),
-	FOREIGN KEY ("person_id") REFERENCES "People"("id")
-		ON UPDATE NO ACTION ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS "Person_Notes_person"
-ON "Person_Notes" ("person_id");
 
 CREATE TABLE IF NOT EXISTS "Person_Relationships" (
 	"id" INTEGER NOT NULL UNIQUE,

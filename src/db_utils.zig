@@ -4,6 +4,17 @@ const types = @import("types.zig");
 
 const schema = @embedFile("db/Zournal.sql");
 
+pub const NoteScope = union(enum) {
+    project,
+    case: i64,
+    person: PersonScope,
+
+    pub const PersonScope = struct {
+        person_id: i64,
+        case_id: ?i64 = null,
+    };
+};
+
 pub const Database = struct {
     conn: zqlite.Conn,
 
@@ -122,95 +133,100 @@ pub const Database = struct {
     }
 
     // Notes
-    pub fn listNotes(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.NoteEntry) {
+    pub fn listNotes(self: Database, scope: NoteScope, allocator: std.mem.Allocator) !std.ArrayList(types.NoteEntry) {
         var notes: std.ArrayList(types.NoteEntry) = .empty;
 
-        var rows = self.conn.rows("SELECT id, title, content FROM Notes ORDER BY id DESC", .{}) catch return error.QueryFailed;
+        var rows = switch (scope) {
+            .project => self.conn.rows(
+                \\SELECT n.id, COALESCE(n.case_id, 0), n.title, n.content
+                \\  FROM Notes n
+                \\ WHERE n.case_id IS NULL
+                \\   AND NOT EXISTS (SELECT 1 FROM Note_People np WHERE np.note_id = n.id)
+                \\ ORDER BY n.id DESC
+            , .{}),
+            .case => |case_id| self.conn.rows(
+                \\SELECT n.id, COALESCE(n.case_id, 0), n.title, n.content
+                \\  FROM Notes n
+                \\ WHERE (n.case_id = ? OR n.case_id IS NULL)
+                \\   AND NOT EXISTS (SELECT 1 FROM Note_People np WHERE np.note_id = n.id)
+                \\ ORDER BY n.id DESC
+            , .{case_id}),
+            .person => |p| if (p.case_id) |cid| self.conn.rows(
+                \\SELECT n.id, COALESCE(n.case_id, 0), n.title, n.content
+                \\  FROM Notes n
+                \\  JOIN Note_People np ON np.note_id = n.id
+                \\ WHERE np.person_id = ?
+                \\   AND (n.case_id = ? OR n.case_id IS NULL)
+                \\ ORDER BY n.id DESC
+            , .{ p.person_id, cid }) else self.conn.rows(
+                \\SELECT n.id, COALESCE(n.case_id, 0), n.title, n.content
+                \\  FROM Notes n
+                \\  JOIN Note_People np ON np.note_id = n.id
+                \\ WHERE np.person_id = ?
+                \\   AND n.case_id IS NULL
+                \\ ORDER BY n.id DESC
+            , .{p.person_id}),
+        } catch return error.QueryFailed;
         defer rows.deinit();
 
         while (rows.next()) |row| {
             const id = row.int(0);
-            const title = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
-            const content = allocator.dupe(u8, row.text(2)) catch return error.OutOfMemory;
-            notes.append(allocator, .{ .id = id, .title = title, .content = content }) catch return error.OutOfMemory;
+            const raw_case = row.int(1);
+            const title = allocator.dupe(u8, row.text(2)) catch return error.OutOfMemory;
+            const content = allocator.dupe(u8, row.text(3)) catch return error.OutOfMemory;
+            notes.append(allocator, .{
+                .id = id,
+                .case_id = if (raw_case == 0) null else raw_case,
+                .title = title,
+                .content = content,
+            }) catch return error.OutOfMemory;
         }
         if (rows.err) |err| return err;
 
         return notes;
     }
 
-    pub fn createNote(self: Database, title: []const u8) !i64 {
-        self.conn.exec("INSERT INTO Notes (title, content) VALUES (?, '')", .{title}) catch return error.InsertFailed;
-        return self.conn.lastInsertedRowId();
-    }
+    pub fn createNote(self: Database, scope: NoteScope, title: []const u8) !i64 {
+        const case_id: ?i64 = switch (scope) {
+            .project => null,
+            .case => |id| id,
+            .person => |p| p.case_id,
+        };
 
-    pub fn listNotesForCase(self: Database, case_id: i64, allocator: std.mem.Allocator) !std.ArrayList(types.NoteEntry) {
-        var notes: std.ArrayList(types.NoteEntry) = .empty;
-
-        var rows = self.conn.rows("SELECT id, title, content FROM Notes WHERE case_id = ? ORDER BY id DESC", .{case_id}) catch return error.QueryFailed;
-        defer rows.deinit();
-
-        while (rows.next()) |row| {
-            const id = row.int(0);
-            const title = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
-            const content = allocator.dupe(u8, row.text(2)) catch return error.OutOfMemory;
-            notes.append(allocator, .{ .id = id, .title = title, .content = content }) catch return error.OutOfMemory;
+        if (case_id) |cid| {
+            self.conn.exec("INSERT INTO Notes (case_id, title, content) VALUES (?, ?, '')", .{ cid, title }) catch return error.InsertFailed;
+        } else {
+            self.conn.exec("INSERT INTO Notes (case_id, title, content) VALUES (NULL, ?, '')", .{title}) catch return error.InsertFailed;
         }
-        if (rows.err) |err| return err;
 
-        return notes;
+        const id = self.conn.lastInsertedRowId();
+
+        switch (scope) {
+            .person => |p| try self.linkNoteToPerson(id, p.person_id),
+            else => {},
+        }
+
+        return id;
     }
 
-    pub fn createNoteForCase(self: Database, title: []const u8, case_id: i64) !i64 {
-        self.conn.exec("INSERT INTO Notes (title, content, case_id) VALUES (?, '', ?)", .{ title, case_id }) catch return error.InsertFailed;
-        return self.conn.lastInsertedRowId();
+    pub fn saveNote(self: Database, id: i64, title: []const u8, content: []const u8) !void {
+        self.conn.exec("UPDATE Notes SET title = ?, content = ? WHERE id = ?", .{ title, content, id }) catch return error.UpdateFailed;
     }
 
-    pub fn updateNoteTitle(self: Database, id: i64, title: []const u8) !void {
-        self.conn.exec("UPDATE Notes SET title = ? WHERE id = ?", .{ title, id }) catch return error.UpdateFailed;
-    }
-
-    pub fn updateNoteContent(self: Database, id: i64, content: []const u8) !void {
-        self.conn.exec("UPDATE Notes SET content = ? WHERE id = ?", .{ content, id }) catch return error.UpdateFailed;
+    pub fn setNoteCase(self: Database, id: i64, case_id: ?i64) !void {
+        if (case_id) |cid| {
+            self.conn.exec("UPDATE Notes SET case_id = ? WHERE id = ?", .{ cid, id }) catch return error.UpdateFailed;
+        } else {
+            self.conn.exec("UPDATE Notes SET case_id = NULL WHERE id = ?", .{id}) catch return error.UpdateFailed;
+        }
     }
 
     pub fn deleteNote(self: Database, id: i64) !void {
         self.conn.exec("DELETE FROM Notes WHERE id = ?", .{id}) catch return error.DeleteFailed;
     }
 
-    // Person notes
-    pub fn listPersonNotes(self: Database, person_id: i64, allocator: std.mem.Allocator) !std.ArrayList(types.NoteEntry) {
-        var notes: std.ArrayList(types.NoteEntry) = .empty;
-
-        var rows = self.conn.rows("SELECT id, title, content FROM Person_Notes WHERE person_id = ? ORDER BY id DESC", .{person_id}) catch return error.QueryFailed;
-        defer rows.deinit();
-
-        while (rows.next()) |row| {
-            const id = row.int(0);
-            const title = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
-            const content = allocator.dupe(u8, row.text(2)) catch return error.OutOfMemory;
-            notes.append(allocator, .{ .id = id, .title = title, .content = content }) catch return error.OutOfMemory;
-        }
-        if (rows.err) |err| return err;
-
-        return notes;
-    }
-
-    pub fn createPersonNote(self: Database, person_id: i64, title: []const u8) !i64 {
-        self.conn.exec("INSERT INTO Person_Notes (person_id, title, content) VALUES (?, ?, '')", .{ person_id, title }) catch return error.InsertFailed;
-        return self.conn.lastInsertedRowId();
-    }
-
-    pub fn updatePersonNoteTitle(self: Database, id: i64, title: []const u8) !void {
-        self.conn.exec("UPDATE Person_Notes SET title = ? WHERE id = ?", .{ title, id }) catch return error.UpdateFailed;
-    }
-
-    pub fn updatePersonNoteContent(self: Database, id: i64, content: []const u8) !void {
-        self.conn.exec("UPDATE Person_Notes SET content = ? WHERE id = ?", .{ content, id }) catch return error.UpdateFailed;
-    }
-
-    pub fn deletePersonNote(self: Database, id: i64) !void {
-        self.conn.exec("DELETE FROM Person_Notes WHERE id = ?", .{id}) catch return error.DeleteFailed;
+    pub fn linkNoteToPerson(self: Database, note_id: i64, person_id: i64) !void {
+        self.conn.exec("INSERT OR IGNORE INTO Note_People (note_id, person_id) VALUES (?, ?)", .{ note_id, person_id }) catch return error.InsertFailed;
     }
 
     // Relationships

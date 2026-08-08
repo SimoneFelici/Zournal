@@ -41,6 +41,7 @@ pub const PersonEntry = struct {
 
 pub const NoteEntry = struct {
     id: i64,
+    case_id: ?i64 = null,
     title: []const u8,
     content: []const u8,
 };

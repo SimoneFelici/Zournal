@@ -2,6 +2,7 @@ const std = @import("std");
 const types = @import("types.zig");
 const fs = @import("fs_utils.zig");
 const db_utils = @import("db_utils.zig");
+const notes_view = @import("ui/notes_view.zig");
 const AppContext = @import("context.zig").AppContext;
 
 pub const PageState = union(enum) {
@@ -51,11 +52,9 @@ pub const ProjectViewState = struct {
 
     cases: std.ArrayList(types.CaseEntry) = .empty,
     people: std.ArrayList(types.PersonEntry) = .empty,
-    notes: std.ArrayList(types.NoteEntry) = .empty,
+    notes: notes_view.NotesState = .{ .scope = .project },
 
     new_person_dialog: bool = false,
-    new_note_dialog: bool = false,
-    open_notes: std.ArrayList(i64) = .empty,
 
     case_view: ?CaseViewState = null,
     person_view: ?PersonViewState = null,
@@ -90,7 +89,14 @@ pub const ProjectViewState = struct {
         return self.arena.allocator();
     }
 
+    pub fn flushNotes(self: *ProjectViewState) void {
+        if (self.case_view) |*cv| cv.flushNotes(self.db);
+        if (self.person_view) |*pv| pv.notes.flushOpen(self.db);
+        self.notes.flushOpen(self.db);
+    }
+
     pub fn deinit(self: *ProjectViewState) void {
+        self.flushNotes();
         self.db.close();
         self.arena.deinit();
         self.* = undefined;
@@ -101,7 +107,7 @@ pub const ProjectViewState = struct {
 
         self.cases = try self.db.listCases(a);
         self.people = try self.db.listPeople(a);
-        self.notes = try self.db.listNotes(a);
+        try self.notes.load(self.db, a);
         try self.relationships.load(self.db, self.people.items, a);
     }
 };
@@ -111,17 +117,21 @@ pub const PersonViewState = struct {
     person_name: []const u8,
     person_initials: [2]u8 = .{ 0, 0 },
     person_initials_len: u2 = 0,
-    notes: std.ArrayList(types.NoteEntry) = .empty,
-    open_notes: std.ArrayList(i64) = .empty,
-    new_note_dialog: bool = false,
+    notes: notes_view.NotesState,
     edit_name_dialog: bool = false,
     delete_person_confirm: bool = false,
-    loaded: bool = false,
 
-    pub fn load(self: *PersonViewState, db: db_utils.Database, allocator: std.mem.Allocator) !void {
-        if (self.loaded) return;
-        self.notes = try db.listPersonNotes(self.person_id, allocator);
-        self.loaded = true;
+    pub fn init(person: types.PersonEntry, case_id: ?i64) PersonViewState {
+        return .{
+            .person_id = person.id,
+            .person_name = person.name,
+            .person_initials = person.initials,
+            .person_initials_len = person.initials_len,
+            .notes = .{ .scope = .{ .person = .{
+                .person_id = person.id,
+                .case_id = case_id,
+            } } },
+        };
     }
 };
 
@@ -179,23 +189,35 @@ pub const CaseViewState = struct {
     case_name: []const u8,
     tab: Tab = .people,
     people: std.ArrayList(types.PersonEntry) = .empty,
-    notes: std.ArrayList(types.NoteEntry) = .empty,
+    notes: notes_view.NotesState,
     timeline: TimelineState = .{},
     new_person_dialog: bool = false,
     import_person_dialog: bool = false,
-    new_note_dialog: bool = false,
     rename_dialog: bool = false,
     delete_case_confirm: bool = false,
-    open_notes: std.ArrayList(i64) = .empty,
     person_view: ?PersonViewState = null,
     loaded: bool = false,
 
     pub const Tab = enum { people, notes, timeline };
 
+    pub fn init(case_entry: types.CaseEntry) CaseViewState {
+        return .{
+            .case_id = case_entry.id,
+            .case_name = case_entry.name,
+            .notes = .{ .scope = .{ .case = case_entry.id } },
+        };
+    }
+
+    pub fn flushNotes(self: *CaseViewState, db: db_utils.Database) void {
+        if (self.person_view) |*pv| pv.notes.flushOpen(db);
+        self.notes.flushOpen(db);
+    }
+
     pub fn load(self: *CaseViewState, db: db_utils.Database, allocator: std.mem.Allocator) !void {
+        try self.notes.load(db, allocator);
+
         if (self.loaded) return;
         self.people = try db.listPeopleForCase(self.case_id, allocator);
-        self.notes = try db.listNotesForCase(self.case_id, allocator);
         self.loaded = true;
     }
 };
