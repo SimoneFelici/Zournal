@@ -244,7 +244,7 @@ fn renderEdges(ts: *state.TimelineState, canvas_rs: dvui.RectScale) void {
 
         dvui.Path.stroke(.{ .points = &.{ pt_a, pt_b } }, .{
             .thickness = 2.0 * canvas_rs.s,
-            .color = dvui.Color.blue,
+            .color = dvui.ColorOrGradient.blue,
             .closed = false,
         });
 
@@ -275,7 +275,7 @@ fn renderNode(s: *state.ProjectViewState, ts: *state.TimelineState, evt: *types.
         .background = true,
         .style = .control,
         .corners = dvui.CornerRect.round(4),
-        .color_fill = if (is_selected) dvui.Color.blue else null,
+        .color_fill = if (is_selected) dvui.ColorOrGradient.blue else null,
     });
     defer node.deinit();
 
