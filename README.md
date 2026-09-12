@@ -9,8 +9,13 @@ https://github.com/user-attachments/assets/595b612c-91d8-4041-95b7-99821cee31ab
 Detective games give you a lot of information to keep track of.
 
 **Zournal** aims to keep everything in one place.
-I personally use it by creating a Project for the game I'm playing, then a Case for each mystery. This is especially useful in games like [The Case of the Golden Idol](https://store.steampowered.com/app/1677770/The_Case_of_the_Golden_Idol/), where there are many separate cases but everything is connected.
-Everything you do in a Case is only visible within that case. You can then choose to "upgrade" things like Notes to make them globally visible, and you can import people into other cases, so if a character appears in more than one case you already have their information.
+
+I personally use it by creating a Project for the game I'm playing, then a Case for each mystery.
+
+This is especially useful in games like [The Case of the Golden Idol](https://store.steampowered.com/app/1677770/The_Case_of_the_Golden_Idol/), where there are many separate cases but everything is connected.
+Everything you do in a Case is only visible within that case.
+
+You can then choose to "upgrade" things like Notes to make them globally visible, and you can import people into other cases, so if a character appears in more than one case you already have their information.
 
 ## Features
 - Create a Project for each game
