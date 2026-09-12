@@ -8,28 +8,17 @@ https://github.com/user-attachments/assets/595b612c-91d8-4041-95b7-99821cee31ab
 
 Detective games give you a lot of information to keep track of.
 
-**Zournal** aims to keep everything in one place:
-- Create investigation projects
-- Split your work into cases
-- Track people and suspects
-- Write case notes and person-specific notes
-- Visualize relationships between people
+**Zournal** aims to keep everything in one place.
+I personally use it by creating a Project for the game I'm playing, then a Case for each mystery. This is especially useful in games like [The Case of the Golden Idol](https://store.steampowered.com/app/1677770/The_Case_of_the_Golden_Idol/), where there are many separate cases but everything is connected.
+Everything you do in a Case is only visible within that case. You can then choose to "upgrade" things like Notes to make them globally visible, and you can import people into other cases, so if a character appears in more than one case you already have their information.
 
 ## Features
-
-- [x] Projects
-- [x] Cases
-- [x] Notes
-- [x] Relationship graph
-- [x] Timeline events
-- [x] Edit people note name
-- [x] Remove Cases
-- [x] Fix people icons
-- [x] Add a search functionality
-- [x] Open more notes simultaneously (if you exit the person, they close automatically)
-- [ ] Import notes?
-- [ ] Global timeline?
-- [ ] Suspect management with role/status colors, like [The Séance of Blake Manor](https://store.steampowered.com/app/1395520/The_Sance_of_Blake_Manor/)
+- Create a Project for each game
+- Create cases for each mystery
+- Notes section
+- Relationships graph
+- Events timeline
+- Colored people avatar to keep track of suspects
 
 ## Download
 Download the latest version of **Zournal** from the [releases page](https://github.com/SimoneFelici/Zournal/releases/latest).
