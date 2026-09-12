@@ -71,13 +71,17 @@ pub const Database = struct {
     pub fn listPeople(self: Database, allocator: std.mem.Allocator) !std.ArrayList(types.PersonEntry) {
         var people: std.ArrayList(types.PersonEntry) = .empty;
 
-        var rows = self.conn.rows("SELECT id, p_name FROM People ORDER BY p_name ASC", .{}) catch return error.QueryFailed;
+        var rows = self.conn.rows("SELECT id, p_name, color FROM People ORDER BY p_name ASC", .{}) catch return error.QueryFailed;
         defer rows.deinit();
 
         while (rows.next()) |row| {
             const id = row.int(0);
             const name = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
-            var entry = types.PersonEntry{ .id = id, .name = name };
+            var entry = types.PersonEntry{
+                .id = id,
+                .name = name,
+                .color = @enumFromInt(row.int(2)),
+            };
             entry.computeInitials();
             people.append(allocator, entry) catch return error.OutOfMemory;
         }
@@ -99,12 +103,16 @@ pub const Database = struct {
         self.conn.exec("DELETE FROM People WHERE id = ?", .{id}) catch return error.DeleteFailed;
     }
 
+    pub fn updatePersonColor(self: Database, id: i64, color: types.AvatarColor) !void {
+        self.conn.exec("UPDATE People SET color = ? WHERE id = ?", .{ @intFromEnum(color), id }) catch return error.UpdateFailed;
+    }
+
     // People (case-scoped)
     pub fn listPeopleForCase(self: Database, case_id: i64, allocator: std.mem.Allocator) !std.ArrayList(types.PersonEntry) {
         var people: std.ArrayList(types.PersonEntry) = .empty;
 
         var rows = self.conn.rows(
-            "SELECT p.id, p.p_name FROM People p JOIN People_Cases pc ON pc.people_id = p.id WHERE pc.case_id = ? ORDER BY p.p_name ASC",
+            "SELECT p.id, p.p_name, p.color FROM People p JOIN People_Cases pc ON pc.people_id = p.id WHERE pc.case_id = ? ORDER BY p.p_name ASC",
             .{case_id},
         ) catch return error.QueryFailed;
         defer rows.deinit();
@@ -112,7 +120,11 @@ pub const Database = struct {
         while (rows.next()) |row| {
             const id = row.int(0);
             const name = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
-            var entry = types.PersonEntry{ .id = id, .name = name };
+            var entry = types.PersonEntry{
+                .id = id,
+                .name = name,
+                .color = @enumFromInt(row.int(2)),
+            };
             entry.computeInitials();
             people.append(allocator, entry) catch return error.OutOfMemory;
         }

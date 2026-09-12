@@ -1,4 +1,5 @@
 const std = @import("std");
+const dvui = @import("dvui");
 
 pub const ProjectEntry = struct {
     name: []const u8,
@@ -10,11 +11,26 @@ pub const CaseEntry = struct {
     name: []const u8,
 };
 
+pub const AvatarColor = enum(u8) {
+    gray,
+    red,
+    blue,
+    green,
+    purple,
+
+    pub fn fill(self: AvatarColor) dvui.ColorOrGradient {
+        switch (self) {
+            inline else => |c| return @field(dvui.ColorOrGradient, @tagName(c)),
+        }
+    }
+};
+
 pub const PersonEntry = struct {
     id: i64,
     name: []const u8,
     initials: [2]u8 = .{ 0, 0 },
     initials_len: u2 = 0,
+    color: AvatarColor = .gray,
 
     pub fn computeInitials(self: *PersonEntry) void {
         var it = std.mem.splitScalar(u8, self.name, ' ');

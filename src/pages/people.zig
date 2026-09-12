@@ -91,7 +91,7 @@ pub fn render(page: *state.PageState) !void {
 
                 const avatar = person.initials[0..person.initials_len];
 
-                if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .id_extra = idx, .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = dvui.CornerRect.round(AVATAR_SIZE) })) {
+                if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .id_extra = idx, .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = dvui.CornerRect.round(AVATAR_SIZE), .color_fill = person.color.fill() })) {
                     s.person_view = state.PersonViewState.init(person, null);
                 }
 

@@ -6,20 +6,35 @@ const notes_view = @import("../ui/notes_view.zig");
 
 const AVATAR_SIZE: f32 = 80;
 
+fn findPerson(list: []types.PersonEntry, person_id: i64) ?*types.PersonEntry {
+    for (list) |*p| {
+        if (p.id == person_id) return p;
+    }
+    return null;
+}
+
 fn syncPersonName(s: *state.ProjectViewState, person_id: i64, name: []const u8) void {
-    for (s.people.items) |*p| {
-        if (p.id == person_id) {
+    if (findPerson(s.people.items, person_id)) |p| {
+        p.name = name;
+        p.computeInitials();
+    }
+    if (s.case_view) |*cv| {
+        if (findPerson(cv.people.items, person_id)) |p| {
             p.name = name;
             p.computeInitials();
         }
     }
+}
+
+fn personColor(s: *state.ProjectViewState, person_id: i64) types.AvatarColor {
+    const p = findPerson(s.people.items, person_id) orelse return .gray;
+    return p.color;
+}
+
+fn syncPersonColor(s: *state.ProjectViewState, person_id: i64, color: types.AvatarColor) void {
+    if (findPerson(s.people.items, person_id)) |p| p.color = color;
     if (s.case_view) |*cv| {
-        for (cv.people.items) |*p| {
-            if (p.id == person_id) {
-                p.name = name;
-                p.computeInitials();
-            }
-        }
+        if (findPerson(cv.people.items, person_id)) |p| p.color = color;
     }
 }
 
@@ -79,10 +94,18 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
     // Avatar + name
     {
         const avatar = pv.person_initials[0..pv.person_initials_len];
-        _ = dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = dvui.CornerRect.round(AVATAR_SIZE) });
+        const current_color = personColor(s, pv.person_id);
+
+        _ = dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = dvui.CornerRect.round(AVATAR_SIZE), .color_fill = current_color.fill() });
 
         var name_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .gravity_x = 0.5 });
         defer name_row.deinit();
+
+        var picked = current_color;
+        if (dvui.dropdownEnum(@src(), types.AvatarColor, .{ .choice = &picked }, .{}, .{ .gravity_y = 0.5 })) {
+            try db.updatePersonColor(pv.person_id, picked);
+            syncPersonColor(s, pv.person_id, picked);
+        }
 
         dvui.labelNoFmt(@src(), pv.person_name, .{}, .{ .gravity_y = 0.5 });
 
