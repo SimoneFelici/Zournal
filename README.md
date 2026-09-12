@@ -23,7 +23,7 @@ You can then choose to "upgrade" things like Notes to make them globally visible
 - Notes section
 - Relationships graph
 - Events timeline
-- Colored people avatar to keep track of suspects
+- Colored avatar to keep track of suspects
 
 ## Download
 Download the latest version of **Zournal** from the [releases page](https://github.com/SimoneFelici/Zournal/releases/latest).
