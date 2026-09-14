@@ -78,7 +78,7 @@ pub fn render(page: *state.PageState) !void {
                     .background = true,
                     .style = .control,
                     .corners = dvui.CornerRect.round(NODE_SIZE),
-                    .color_fill = if (is_selected) (if (person.color == .blue) dvui.ColorOrGradient.purple else dvui.ColorOrGradient.blue) else person.color.fill(),
+                    .color_fill = if (is_selected) dvui.ColorOrGradient.blue else person.color.fill(),
                 });
                 defer circle.deinit();
                 dvui.labelNoFmt(@src(), avatar, .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 });

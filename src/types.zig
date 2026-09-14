@@ -13,10 +13,10 @@ pub const CaseEntry = struct {
 
 pub const AvatarColor = enum(u8) {
     gray,
-    red,
-    blue,
+    maroon,
     green,
     purple,
+    navy,
 
     pub fn fill(self: AvatarColor) dvui.ColorOrGradient {
         switch (self) {
