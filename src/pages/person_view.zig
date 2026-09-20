@@ -91,7 +91,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         }
     }
 
-    // Avatar + name
+    // Avatar + color + name + rename + delete
     {
         const avatar = pv.person_initials[0..pv.person_initials_len];
         const current_color = personColor(s, pv.person_id);
@@ -102,12 +102,47 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         defer name_row.deinit();
 
         var picked = current_color;
-        if (dvui.dropdownEnum(@src(), types.AvatarColor, .{ .choice = &picked }, .{}, .{ .gravity_y = 0.5 })) {
+        var changed = false;
+
+        {
+            var dd: dvui.DropdownWidget = undefined;
+            dd.init(@src(), .{
+                .selected_index = @intFromEnum(picked),
+                .label = @tagName(picked),
+            }, .{ .gravity_y = 0.5 });
+            defer dd.deinit();
+
+            if (dd.dropped()) {
+                inline for (@typeInfo(types.AvatarColor).@"enum".fields) |e| {
+                    const c: types.AvatarColor = @field(types.AvatarColor, e.name);
+
+                    var mi = dd.addChoice();
+                    defer mi.deinit();
+
+                    var sw = dvui.box(@src(), .{}, .{
+                        .min_size_content = .{ .w = 70, .h = 15 },
+                        .background = true,
+                        .color_fill = c.fill(),
+                        .expand = .both,
+                    });
+                    sw.deinit();
+
+                    if (mi.activeRect()) |_| {
+                        dd.close();
+                        picked = c;
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        if (changed) {
             try db.updatePersonColor(pv.person_id, picked);
             syncPersonColor(s, pv.person_id, picked);
         }
 
         dvui.labelNoFmt(@src(), pv.person_name, .{}, .{ .gravity_y = 0.5 });
+        // ... resto invariato
 
         if (dvui.buttonIcon(@src(), "Edit Name", dvui.entypo.edit, .{ .draw_focus = false }, .{}, .{ .gravity_y = 0.5 })) {
             pv.edit_name_dialog = !pv.edit_name_dialog;
