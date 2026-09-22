@@ -30,7 +30,16 @@ You can then choose to "upgrade" things like Notes to make them globally visible
 - Colored avatar to keep track of suspects
 
 ## Download
+
+### Binary
+
 Download the latest version of **Zournal** from the [releases page](https://github.com/SimoneFelici/Zournal/releases/latest).
+
+### Arch Linux
+
+[Binary releases](https://aur.archlinux.org/packages/zournal-bin)
+
+[Git releases](https://aur.archlinux.org/packages/zournal-git)
 
 ## Building from source
 
