@@ -1,4 +1,3 @@
-<img width="1280" height="640" alt="Detective Ziguana" src="https://github.com/user-attachments/assets/bae8435b-9fae-43f2-9587-058587cdb0d1" />
 
 
 # Zournal
