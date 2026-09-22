@@ -6,7 +6,7 @@ Detective Ziguana by [Ayyur](https://ayyurlinks.carrd.co/)
 
 A journal app for detective/mistery games written in [Zig](https://codeberg.org/ziglang/zig).
 
-https://github.com/user-attachments/assets/595b612c-91d8-4041-95b7-99821cee31ab
+https://github.com/user-attachments/assets/fb95fd63-96d2-4118-9b84-ff49eb4d559c
 
 ## Info
 
