@@ -1,4 +1,5 @@
-
+<img width="1280" height="640" alt="Detective Ziguana" src="https://github.com/user-attachments/assets/913926cb-b3cc-445e-b005-c1595924ad13" />
+Detective Ziguana by [Ayyur](https://ayyurlinks.carrd.co/)
 
 # Zournal
 
