@@ -37,9 +37,8 @@ Download the latest version of **Zournal** from the [releases page](https://gith
 
 ### Arch Linux
 
-[Binary releases](https://aur.archlinux.org/packages/zournal-bin)
-
-[Git releases](https://aur.archlinux.org/packages/zournal-git)
+- [Binary releases](https://aur.archlinux.org/packages/zournal-bin)
+- [Git releases](https://aur.archlinux.org/packages/zournal-git)
 
 ## Building from source
 
