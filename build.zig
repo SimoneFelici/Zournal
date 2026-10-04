@@ -37,6 +37,7 @@ pub fn build(b: *std.Build) !void {
         _ = wf.addCopyFile(prod_exe.getEmittedBin(), exe_name);
         if (t.os_tag == .linux) {
             _ = wf.addCopyFile(b.path("resources/zournal.desktop"), "zournal.desktop");
+            _ = wf.addCopyFile(b.path("resources/zournal.png"), "zournal.png");
         }
 
         const tar = b.addSystemCommand(&.{ "tar", "czf" });
