@@ -38,7 +38,7 @@ pub fn searchBox(src: std.builtin.SourceLocation) []const u8 {
 
 // Substring search
 pub fn matches(text: []const u8, query: []const u8) bool {
-    return query.len == 0 or std.ascii.indexOfIgnoreCase(text, query) != null;
+    return query.len == 0 or std.ascii.findIgnoreCase(text, query) != null;
 }
 
 pub fn fitText(text: []const u8, max_w: f32) []const u8 {

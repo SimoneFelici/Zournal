@@ -226,7 +226,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 if (cp.id == person.id) break true;
             } else false;
             if (in_case) continue;
-            if (query.len > 0 and std.ascii.indexOfIgnoreCase(person.name, query) == null) continue;
+            if (query.len > 0 and std.ascii.findIgnoreCase(person.name, query) == null) continue;
 
             if (dvui.button(@src(), person.name, .{ .draw_focus = false }, .{
                 .id_extra = i,

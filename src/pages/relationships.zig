@@ -102,7 +102,7 @@ pub fn render(page: *state.PageState) !void {
                             if (me.button == .left and dvui.captured(node.data().id)) {
                                 e.handle(@src(), node.data());
                                 dvui.captureMouse(null, e.num);
-                                dvui.dragEnd();
+                                dvui.dragEnd(me.button);
                                 if (rs.dragging_id != person.id) {
                                     handleClick(rs, person.id);
                                 } else {
@@ -115,7 +115,7 @@ pub fn render(page: *state.PageState) !void {
                         },
                         .motion => {
                             if (dvui.captured(node.data().id)) {
-                                if (dvui.dragging(me.p, null)) |dps| {
+                                if (dvui.dragging(me, null)) |dps| {
                                     e.handle(@src(), node.data());
                                     const dp = dps.scale(1 / canvas_rs.s, dvui.Point);
                                     pos.x += dp.x;

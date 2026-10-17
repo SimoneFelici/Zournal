@@ -107,14 +107,14 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         {
             var dd: dvui.DropdownWidget = undefined;
             dd.init(@src(), .{
-                .selected_index = @intFromEnum(picked),
+                .selected_index = @backingInt(picked),
                 .label = @tagName(picked),
             }, .{ .gravity_y = 0.5 });
             defer dd.deinit();
 
             if (dd.dropped()) {
-                inline for (@typeInfo(types.AvatarColor).@"enum".fields) |e| {
-                    const c: types.AvatarColor = @field(types.AvatarColor, e.name);
+                inline for (@typeInfo(types.AvatarColor).@"enum".field_names) |e| {
+                    const c: types.AvatarColor = @field(types.AvatarColor, e);
 
                     var mi = dd.addChoice();
                     defer mi.deinit();

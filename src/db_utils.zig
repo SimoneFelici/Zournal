@@ -80,7 +80,7 @@ pub const Database = struct {
             var entry = types.PersonEntry{
                 .id = id,
                 .name = name,
-                .color = @enumFromInt(row.int(2)),
+                .color = @fromBackingInt(@intCast(row.int(2))),
             };
             entry.computeInitials();
             people.append(allocator, entry) catch return error.OutOfMemory;
@@ -104,7 +104,7 @@ pub const Database = struct {
     }
 
     pub fn updatePersonColor(self: Database, id: i64, color: types.AvatarColor) !void {
-        self.conn.exec("UPDATE People SET color = ? WHERE id = ?", .{ @intFromEnum(color), id }) catch return error.UpdateFailed;
+        self.conn.exec("UPDATE People SET color = ? WHERE id = ?", .{ @backingInt(color), id }) catch return error.UpdateFailed;
     }
 
     // People (case-scoped)
@@ -123,7 +123,7 @@ pub const Database = struct {
             var entry = types.PersonEntry{
                 .id = id,
                 .name = name,
-                .color = @enumFromInt(row.int(2)),
+                .color = @fromBackingInt(@intCast(row.int(2))),
             };
             entry.computeInitials();
             people.append(allocator, entry) catch return error.OutOfMemory;

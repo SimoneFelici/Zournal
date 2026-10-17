@@ -96,7 +96,7 @@ pub fn getProjectPath(ctx: *const AppContext, name: []const u8) ![:0]u8 {
     );
     defer ctx.allocator.free(path);
 
-    return ctx.allocator.dupeZ(u8, path);
+    return ctx.allocator.dupeSentinel(u8, path, 0);
 }
 
 pub fn createProject(ctx: *const AppContext, name: []const u8) !void {
