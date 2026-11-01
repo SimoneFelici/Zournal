@@ -13,15 +13,20 @@ pub const CaseEntry = struct {
 
 pub const AvatarColor = enum(u8) {
     gray,
-    maroon,
+    red,
     green,
     purple,
-    navy,
+    blue,
 
     pub fn fill(self: AvatarColor) dvui.ColorOrGradient {
-        switch (self) {
-            inline else => |c| return @field(dvui.ColorOrGradient, @tagName(c)),
-        }
+        const dark = dvui.themeGet().dark;
+        return switch (self) {
+            .gray => if (dark) .gray else .silver,
+            .red => if (dark) .maroon else .red,
+            .green => if (dark) .green else .lime,
+            .purple => if (dark) .purple else .fuchsia,
+            .blue => if (dark) .navy else .cyan,
+        };
     }
 };
 

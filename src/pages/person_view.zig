@@ -3,6 +3,7 @@ const dvui = @import("dvui");
 const state = @import("../states.zig");
 const types = @import("../types.zig");
 const notes_view = @import("../ui/notes_view.zig");
+const colors = @import("../ui/colors.zig");
 
 const AVATAR_SIZE: f32 = 80;
 
@@ -84,7 +85,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         var top_bar = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
         defer top_bar.deinit();
 
-        if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .color_fill_hover = .red })) {
+        if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .color_fill_hover = colors.danger() })) {
             pv.notes.flushOpen(db);
             person_view.* = null;
             return;
@@ -96,7 +97,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         const avatar = pv.person_initials[0..pv.person_initials_len];
         const current_color = personColor(s, pv.person_id);
 
-        _ = dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = dvui.CornerRect.round(AVATAR_SIZE), .color_fill = current_color.fill() });
+        _ = dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = .all(AVATAR_SIZE), .color_fill = current_color.fill() });
 
         var name_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .gravity_x = 0.5 });
         defer name_row.deinit();
@@ -149,7 +150,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
             pv.delete_person_confirm = false;
         }
 
-        if (dvui.buttonIcon(@src(), "Delete Person", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .gravity_y = 0.5, .color_fill = .red })) {
+        if (dvui.buttonIcon(@src(), "Delete Person", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .gravity_y = 0.5, .color_fill = colors.danger() })) {
             pv.delete_person_confirm = !pv.delete_person_confirm;
             pv.edit_name_dialog = false;
         }
@@ -173,7 +174,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
             pv.edit_name_dialog = false;
         }
 
-        if (dvui.button(@src(), "Save", .{ .draw_focus = false }, .{ .color_fill = .blue }) or enter) {
+        if (dvui.button(@src(), "Save", .{ .draw_focus = false }, .{ .color_fill = colors.primary() }) or enter) {
             if (new_name.len > 0) {
                 db.updatePerson(pv.person_id, new_name) catch |err| {
                     std.log.err("Update person failed: {}", .{err});
@@ -204,7 +205,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
             pv.delete_person_confirm = false;
         }
 
-        if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .color_fill = .red })) {
+        if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .color_fill = colors.danger() })) {
             const person_id = pv.person_id;
             db.deletePerson(person_id) catch |err| {
                 std.log.err("Delete person failed: {}", .{err});

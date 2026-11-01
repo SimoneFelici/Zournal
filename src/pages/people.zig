@@ -5,6 +5,7 @@ const state = @import("../states.zig");
 const types = @import("../types.zig");
 const grid = @import("../ui/grid.zig");
 const widgets = @import("../ui/widgets.zig");
+const colors = @import("../ui/colors.zig");
 
 const CARD_W: f32 = 140;
 const CARD_SLOT: f32 = CARD_W + 12;
@@ -21,7 +22,7 @@ pub fn render(page: *state.PageState) !void {
 
         search_open = widgets.searchToggle(@src());
 
-        if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
+        if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = colors.primary(), .gravity_x = 1 })) {
             s.new_person_dialog = !s.new_person_dialog;
         }
     }
@@ -39,7 +40,7 @@ pub fn render(page: *state.PageState) !void {
             s.new_person_dialog = false;
         }
 
-        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue }) or enter) {
+        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = colors.primary() }) or enter) {
             if (name.len > 0) {
                 const id = s.db.createPerson(name) catch |err| {
                     std.log.err("Create person failed: {}", .{err});
@@ -91,7 +92,7 @@ pub fn render(page: *state.PageState) !void {
 
                 const avatar = person.initials[0..person.initials_len];
 
-                if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .id_extra = idx, .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = dvui.CornerRect.round(AVATAR_SIZE), .color_fill = person.color.fill() })) {
+                if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .id_extra = idx, .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = .all(AVATAR_SIZE), .color_fill = person.color.fill() })) {
                     s.person_view = state.PersonViewState.init(person, null);
                 }
 

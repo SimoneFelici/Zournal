@@ -5,6 +5,7 @@ const state = @import("../states.zig");
 const fs = @import("../fs_utils.zig");
 const db_utils = @import("../db_utils.zig");
 const people_page = @import("people.zig");
+const colors = @import("../ui/colors.zig");
 
 pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
     var s = &page.project_select;
@@ -17,7 +18,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
     if (!s.loaded)
         try s.fetchProjects(ctx);
 
-    var outer = dvui.box(@src(), .{}, .{ .expand = .both });
+    var outer = dvui.box(@src(), .{}, .{ .expand = .both, .background = true });
     defer outer.deinit();
 
     var main_box = dvui.box(@src(), .{ .dir = .vertical }, .{
@@ -32,7 +33,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
         var scroll = dvui.scrollArea(@src(), .{}, .{
             .expand = .horizontal,
             .max_size_content = .{ .w = 9999, .h = 250 },
-            .corners = dvui.CornerRect.round(3),
+            .corners = .all(3),
         });
         defer scroll.deinit();
 
@@ -40,7 +41,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
             if (dvui.button(@src(), entry.name, .{ .draw_focus = false }, .{
                 .id_extra = i,
                 .expand = .horizontal,
-                .corners = dvui.CornerRect.round(2),
+                .corners = .all(3),
             })) {
                 const db_path = fs.getProjectPath(ctx, entry.name) catch |err| {
                     std.log.err("Failed to get DB path: {}", .{err});
@@ -85,7 +86,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
         });
         defer btn_row.deinit();
 
-        if (dvui.button(@src(), "Import", .{ .draw_focus = false }, .{ .color_fill = .green, .gravity_x = 0 })) {
+        if (dvui.button(@src(), "Import", .{ .draw_focus = false }, .{ .gravity_x = 0 })) {
             if (try dvui.native_dialogs.Native.openMultiple(temp_allocator, .{ .title = "Import .db files" })) |paths| {
                 defer temp_allocator.free(paths);
                 for (paths) |path| {
@@ -104,7 +105,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
         }
 
         if (!s.new_project_dialog) {
-            if (dvui.button(@src(), "New Project", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 1 })) {
+            if (dvui.button(@src(), "New Project", .{ .draw_focus = false }, .{ .color_fill = colors.primary(), .gravity_x = 1 })) {
                 s.new_project_dialog = true;
             }
         }
@@ -126,7 +127,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
                 s.new_project_dialog = false;
             }
 
-            if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue, .gravity_x = 1 }) or enter) {
+            if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = colors.primary(), .gravity_x = 1 }) or enter) {
                 if (name.len > 0) {
                     fs.createProject(ctx, name) catch |err| {
                         if (err == error.PathAlreadyExists) {

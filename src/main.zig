@@ -25,9 +25,6 @@ pub const dvui_app: dvui.App = .{
         .options = .{
             .size = .{ .w = 800.0, .h = 600.0 },
             .title = "Zournal",
-            .window_init_options = .{
-                .theme = dvui.Theme.builtin.adwaita_dark,
-            },
             .app = "Zournal",
             .org = "Eternal Blue Industries",
         },
