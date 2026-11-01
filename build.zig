@@ -20,9 +20,7 @@ pub fn build(b: *std.Build) !void {
     const run_cmd = b.addRunArtifact(exe);
     run_step.dependOn(&run_cmd.step);
     run_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
+    run_cmd.addPassthruArgs();
 
     const prod_step = b.step("prod", "Build for all platforms");
     for (targets) |t| {
@@ -75,10 +73,15 @@ fn setupExe(
     exe.root_module.addImport("zqlite", zqlite.module("zqlite"));
 
     // DVUI
-    switch (target.result.os.tag) {
-        .macos => {
-            const xcode_frameworks = b.dependency("xcode_frameworks", .{});
-            const dvui_dep = b.dependency("dvui", .{
+    const dvui_dep = switch (target.result.os.tag) {
+        .macos => blk: {
+            const xcode_frameworks = b.lazyDependency("xcode_frameworks", .{}) orelse return exe;
+
+            exe.root_module.addFrameworkPath(xcode_frameworks.path("Frameworks"));
+            exe.root_module.addSystemIncludePath(xcode_frameworks.path("include"));
+            exe.root_module.addLibraryPath(xcode_frameworks.path("lib"));
+
+            break :blk b.dependency("dvui", .{
                 .target = target,
                 .optimize = optimize,
                 .backend = .sdl3,
@@ -86,22 +89,15 @@ fn setupExe(
                 .system_framework_path = xcode_frameworks.path("Frameworks"),
                 .library_path = xcode_frameworks.path("lib"),
             });
-            exe.root_module.addImport("dvui", dvui_dep.module("dvui_sdl3"));
-            exe.root_module.addImport("sdl-backend", dvui_dep.module("sdl3"));
-            exe.root_module.addFrameworkPath(xcode_frameworks.path("Frameworks"));
-            exe.root_module.addSystemIncludePath(xcode_frameworks.path("include"));
-            exe.root_module.addLibraryPath(xcode_frameworks.path("lib"));
         },
-        else => {
-            const dvui_dep = b.dependency("dvui", .{
-                .target = target,
-                .optimize = optimize,
-                .backend = .sdl3,
-            });
-            exe.root_module.addImport("dvui", dvui_dep.module("dvui_sdl3"));
-            exe.root_module.addImport("sdl-backend", dvui_dep.module("sdl3"));
-        },
-    }
+        else => b.dependency("dvui", .{
+            .target = target,
+            .optimize = optimize,
+            .backend = .sdl3,
+        }),
+    };
+    exe.root_module.addImport("dvui", dvui_dep.module("dvui_sdl3"));
+    exe.root_module.addImport("sdl-backend", dvui_dep.module("sdl3"));
 
     // Known Folders
     const known_folders = b.dependency("known_folders", .{

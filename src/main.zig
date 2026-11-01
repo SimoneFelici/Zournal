@@ -28,6 +28,8 @@ pub const dvui_app: dvui.App = .{
             .window_init_options = .{
                 .theme = dvui.Theme.builtin.adwaita_dark,
             },
+            .app = "Zournal",
+            .org = "Eternal Blue Industries",
         },
     },
     .frameFn = AppFrame,
