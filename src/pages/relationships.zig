@@ -41,18 +41,21 @@ pub fn render(page: *state.PageState) !void {
                 .closed = false,
             });
 
+            // Relationship name
             if (rel.label.len > 0) {
-                const lw = dvui.themeGet().font_body.textSize(rel.label).w + 24.0;
+                const theme = dvui.themeGet();
+                const lw = theme.font_body.textSize(rel.label).w + 24.0;
                 const mx = (pos_a.x + pos_b.x) / 2 + HALF - lw / 2;
                 const my = (pos_a.y + pos_b.y) / 2 + HALF - 10;
                 var lbox = dvui.box(@src(), .{}, .{
                     .id_extra = ri,
                     .rect = dvui.Rect{ .x = mx, .y = my, .w = lw, .h = 28 },
                     .background = true,
+                    .color_fill = .{ .color = theme.color(.window, .fill).opacity(0.8) },
                     .corners = .all(3),
                 });
                 defer lbox.deinit();
-                dvui.labelNoFmt(@src(), rel.label, .{}, .{ .gravity_x = 0.5 });
+                dvui.labelNoFmt(@src(), rel.label, .{}, .{ .gravity_x = 0.6 });
             }
         }
 

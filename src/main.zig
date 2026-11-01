@@ -27,6 +27,7 @@ pub const dvui_app: dvui.App = .{
             .title = "Zournal",
             .app = "Zournal",
             .org = "Eternal Blue Industries",
+            // .window_init_options = .{ .color_scheme = .light }
         },
     },
     .frameFn = AppFrame,

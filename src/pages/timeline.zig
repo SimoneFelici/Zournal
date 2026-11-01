@@ -250,7 +250,8 @@ fn renderEdges(ts: *state.TimelineState, canvas_rs: dvui.RectScale) void {
         });
 
         if (conn.connection_type.len > 0) {
-            const lw = dvui.themeGet().font_body.textSize(conn.connection_type).w + 24.0;
+            const theme = dvui.themeGet();
+            const lw = theme.font_body.textSize(conn.connection_type).w + 24.0;
             var lbox = dvui.box(@src(), .{}, .{
                 .id_extra = ci,
                 .rect = dvui.Rect{
@@ -261,6 +262,7 @@ fn renderEdges(ts: *state.TimelineState, canvas_rs: dvui.RectScale) void {
                 },
                 .background = true,
                 .corners = .all(3),
+                .color_fill = .{ .color = theme.color(.window, .fill).opacity(0.8) },
             });
             defer lbox.deinit();
             dvui.labelNoFmt(@src(), conn.connection_type, .{}, .{ .gravity_x = 0.5 });
