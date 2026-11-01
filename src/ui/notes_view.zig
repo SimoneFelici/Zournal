@@ -4,6 +4,7 @@ const types = @import("../types.zig");
 const db_utils = @import("../db_utils.zig");
 const grid = @import("grid.zig");
 const widgets = @import("widgets.zig");
+const colors = @import("colors.zig");
 
 pub const NoteScope = db_utils.NoteScope;
 
@@ -77,7 +78,7 @@ pub fn render(
 
         search_open = widgets.searchToggle(@src());
 
-        if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
+        if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = colors.primary(), .gravity_x = 1 })) {
             ns.new_note_dialog = !ns.new_note_dialog;
         }
     }
@@ -95,7 +96,7 @@ pub fn render(
             ns.new_note_dialog = false;
         }
 
-        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = .blue }) or enter) {
+        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = colors.primary() }) or enter) {
             if (title.len > 0) {
                 const id = db.createNote(ns.scope, title) catch |err| {
                     std.log.err("Create note failed: {}", .{err});
@@ -146,7 +147,7 @@ pub fn render(
                 var card = dvui.box(@src(), .{ .dir = .vertical }, .{ .id_extra = key });
                 defer card.deinit();
 
-                if (dvui.button(@src(), widgets.fitText(note.title, CARD_W - 16), .{ .draw_focus = false }, .{ .id_extra = key, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = dvui.CornerRect.round(3) })) {
+                if (dvui.button(@src(), widgets.fitText(note.title, CARD_W - 16), .{ .draw_focus = false }, .{ .id_extra = key, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = .all(3) })) {
                     ns.openNote(allocator, note.id);
                 }
             }
@@ -204,7 +205,7 @@ pub fn render(
                     }
                 }
 
-                if (dvui.buttonIcon(@src(), "Delete Note", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .color_fill = .red, .gravity_y = 0.5 })) {
+                if (dvui.buttonIcon(@src(), "Delete Note", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .color_fill = colors.danger(), .gravity_y = 0.5 })) {
                     db.deleteNote(note_id) catch |err| {
                         std.log.err("Delete note failed: {}", .{err});
                         return;

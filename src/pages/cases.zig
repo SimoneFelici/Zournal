@@ -3,6 +3,7 @@ const dvui = @import("dvui");
 const state = @import("../states.zig");
 const grid = @import("../ui/grid.zig");
 const widgets = @import("../ui/widgets.zig");
+const colors = @import("../ui/colors.zig");
 
 const CARD_W: f32 = 200;
 const CARD_H: f32 = 80;
@@ -20,7 +21,7 @@ pub fn render(page: *state.PageState) !void {
 
         search_open = widgets.searchToggle(@src());
 
-        if (dvui.buttonIcon(@src(), "New Case", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = .blue, .gravity_x = 1 })) {
+        if (dvui.buttonIcon(@src(), "New Case", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = colors.primary(), .gravity_x = 1 })) {
             const id = s.db.createCase() catch |err| {
                 std.log.err("Create case failed: {}", .{err});
                 return;
@@ -58,7 +59,7 @@ pub fn render(page: *state.PageState) !void {
                 if (!widgets.matches(case_entry.name, query)) continue;
                 c += 1;
                 shown += 1;
-                if (dvui.button(@src(), widgets.fitText(case_entry.name, CARD_W - 16), .{ .draw_focus = false }, .{ .id_extra = i, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = dvui.CornerRect.round(3) })) {
+                if (dvui.button(@src(), widgets.fitText(case_entry.name, CARD_W - 16), .{ .draw_focus = false }, .{ .id_extra = i, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = .all(3) })) {
                     s.case_view = state.CaseViewState.init(case_entry);
                 }
             }
