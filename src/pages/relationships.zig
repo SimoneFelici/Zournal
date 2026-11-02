@@ -120,6 +120,7 @@ pub fn render(page: *state.PageState) !void {
                                     };
                                 }
                                 rs.dragging_id = null;
+                                dvui.refresh(null, @src(), null);
                             }
                         },
                         .motion => {

@@ -69,6 +69,7 @@ pub const std_options: std.Options = .{
 };
 
 pub fn AppFrame() !dvui.App.Result {
+    // dvui.label(@src(), "{d:.0} fps", .{dvui.FPS()}, .{ .gravity_x = 1 });
     return switch (page) {
         .project_select => try project_select.render(&app_ctx, &page),
         .project_view => try project_view.render(&app_ctx, &page),

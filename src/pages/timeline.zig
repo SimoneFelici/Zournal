@@ -245,7 +245,7 @@ fn renderEdges(ts: *state.TimelineState, canvas_rs: dvui.RectScale) void {
 
         dvui.Path.stroke(.{ .points = &.{ pt_a, pt_b } }, .{
             .thickness = 2.0 * canvas_rs.s,
-            .color = colors.primary(),
+            .color = colors.line(),
             .closed = false,
         });
 
@@ -313,6 +313,7 @@ fn renderNode(s: *state.ProjectViewState, ts: *state.TimelineState, evt: *types.
                     };
                 }
                 ts.dragging_id = null;
+                dvui.refresh(null, @src(), null);
             },
             .motion => if (dvui.captured(node.data().id)) {
                 if (dvui.dragging(me, null)) |dps| {
