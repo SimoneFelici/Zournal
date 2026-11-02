@@ -1,8 +1,8 @@
 const std = @import("std");
 
 const targets: []const std.Target.Query = &.{
-    .{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .gnu },
-    .{ .cpu_arch = .aarch64, .os_tag = .linux, .abi = .gnu },
+    .{ .cpu_arch = .x86_64, .os_tag = .linux },
+    .{ .cpu_arch = .aarch64, .os_tag = .linux },
     .{ .cpu_arch = .aarch64, .os_tag = .macos },
     .{ .cpu_arch = .x86_64, .os_tag = .macos },
     .{ .cpu_arch = .x86_64, .os_tag = .windows },
@@ -25,24 +25,29 @@ pub fn build(b: *std.Build) !void {
     const prod_step = b.step("prod", "Build for all platforms");
     for (targets) |t| {
         const prod_target = b.resolveTargetQuery(t);
-        const prod_exe = setupExe(b, prod_target, optimize);
+        const prod_exe = setupExe(b, prod_target, .ReleaseSafe);
+        if (t.os_tag == .windows) {
+            prod_exe.subsystem = .windows;
+        }
 
         const triple = try t.zigTriple(b.allocator);
         const ext = if (t.os_tag == .windows) ".exe" else "";
-        const exe_name = b.fmt("zournal{s}", .{ext});
+        const dir_name = b.fmt("zournal-{s}", .{triple});
 
         const wf = b.addWriteFiles();
-        _ = wf.addCopyFile(prod_exe.getEmittedBin(), exe_name);
+        _ = wf.addCopyFile(prod_exe.getEmittedBin(), b.fmt("{s}/zournal{s}", .{ dir_name, ext }));
         if (t.os_tag == .linux) {
-            _ = wf.addCopyFile(b.path("resources/zournal.desktop"), "zournal.desktop");
-            _ = wf.addCopyFile(b.path("resources/zournal.png"), "zournal.png");
+            _ = wf.addCopyFile(b.path("resources/zournal.desktop"), b.fmt("{s}/zournal.desktop", .{dir_name}));
+            _ = wf.addCopyFile(b.path("resources/zournal.png"), b.fmt("{s}/zournal.png", .{dir_name}));
         }
 
-        const tar = b.addSystemCommand(&.{ "tar", "czf" });
+        const archive_name = b.fmt("{s}.tar.gz", .{dir_name});
+        const tar = b.addSystemCommand(&.{ "tar", "-czf" });
         tar.setCwd(wf.getDirectory());
-        const archive_name = b.fmt("{s}.tar.gz", .{triple});
-        const archive = tar.addOutputFileArg(archive_name);
-        tar.addArg(".");
+        const archive = tar.addOutputFileArg2(archive_name, .{});
+        tar.addArg("-C");
+        tar.addDirectoryArg2(wf.getDirectory(), .{});
+        tar.addArg(dir_name);
 
         const install_archive = b.addInstallFileWithDir(archive, .prefix, archive_name);
         prod_step.dependOn(&install_archive.step);
@@ -62,7 +67,6 @@ fn setupExe(
             .optimize = optimize,
             .link_libc = true,
         }),
-        .use_llvm = true,
     });
 
     // zqlite

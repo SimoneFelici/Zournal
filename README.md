@@ -44,14 +44,14 @@ Download the latest version of **Zournal** from the [releases page](https://gith
 
 ### Requirements
 
-- Zig 0.16.0
+- Zig 0.17.0
 
 ### Build
 
 ```bash
 git clone https://github.com/SimoneFelici/Zournal.git
 cd Zournal
-zig build -Doptimize=ReleaseFast
+zig build -Doptimize=ReleaseSafe
 ```
 
 ## Database location:
