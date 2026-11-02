@@ -26,6 +26,7 @@ pub fn build(b: *std.Build) !void {
     for (targets) |t| {
         const prod_target = b.resolveTargetQuery(t);
         const prod_exe = setupExe(b, prod_target, .ReleaseSafe);
+        prod_exe.root_module.strip = true;
         if (t.os_tag == .windows) {
             prod_exe.subsystem = .windows;
         }
