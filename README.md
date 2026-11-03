@@ -44,7 +44,7 @@ Download the latest version of **Zournal** from the [releases page](https://gith
 
 ### Requirements
 
-- Zig 0.17.0
+- Zig 0.17.1
 
 ### Build
 
