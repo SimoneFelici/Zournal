@@ -75,16 +75,17 @@ fn setupExe(
         .target = target,
         .optimize = optimize,
     });
-    exe.root_module.addImport("zqlite", zqlite.module("zqlite"));
+
+    // Known Folders
+    const known_folders = b.dependency("known_folders", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("known-folders");
 
     // DVUI
     const dvui_dep = switch (target.result.os.tag) {
         .macos => blk: {
             const xcode_frameworks = b.lazyDependency("xcode_frameworks", .{}) orelse return exe;
-
-            exe.root_module.addFrameworkPath(xcode_frameworks.path("Frameworks"));
-            exe.root_module.addSystemIncludePath(xcode_frameworks.path("include"));
-            exe.root_module.addLibraryPath(xcode_frameworks.path("lib"));
 
             break :blk b.dependency("dvui", .{
                 .target = target,
@@ -101,15 +102,11 @@ fn setupExe(
             .backend = .sdl3,
         }),
     };
+
+    exe.root_module.addImport("zqlite", zqlite.module("zqlite"));
+    exe.root_module.addImport("known-folders", known_folders);
     exe.root_module.addImport("dvui", dvui_dep.module("dvui_sdl3"));
     exe.root_module.addImport("sdl-backend", dvui_dep.module("sdl3"));
-
-    // Known Folders
-    const known_folders = b.dependency("known_folders", .{
-        .target = target,
-        .optimize = optimize,
-    }).module("known-folders");
-    exe.root_module.addImport("known-folders", known_folders);
 
     return exe;
 }
