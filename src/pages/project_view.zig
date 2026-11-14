@@ -44,7 +44,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
             };
 
             for (tab_entries) |entry| {
-                var tab = tabs.addTab(s.tab == entry.tab, .{ .process_events = true }, .{ .expand = .horizontal });
+                var tab = tabs.addTab(s.tab == entry.tab, .{}, .{ .expand = .horizontal });
                 defer tab.deinit();
                 switch (entry.tab) {
                     .cases => dvui.label(@src(), "Cases ({d})", .{s.cases.items.len}, .{}),

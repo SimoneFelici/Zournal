@@ -38,24 +38,20 @@ pub fn render(page: *state.PageState) !void {
             dvui.Path.stroke(.{ .points = &.{ pt_a, pt_b } }, .{
                 .thickness = 2.0 * canvas_rs.s,
                 .color = .{ .color = dvui.themeGet().focus },
-                .closed = false,
             });
 
             // Relationship name
             if (rel.label.len > 0) {
-                const theme = dvui.themeGet();
-                const lw = theme.font_body.textSize(rel.label).w + 24.0;
-                const mx = (pos_a.x + pos_b.x) / 2 + HALF - lw / 2;
-                const my = (pos_a.y + pos_b.y) / 2 + HALF - 10;
-                var lbox = dvui.box(@src(), .{}, .{
+                const sz = dvui.themeGet().font_body.textSize(rel.label);
+                const w = sz.w + 12;
+                const h = sz.h + 12;
+                dvui.labelNoFmt(@src(), rel.label, .{}, .{
                     .id_extra = ri,
-                    .rect = dvui.Rect{ .x = mx, .y = my, .w = lw, .h = 28 },
+                    .rect = .{ .x = (pos_a.x + pos_b.x - w) / 2 + HALF, .y = (pos_a.y + pos_b.y - h) / 2 + HALF, .w = w, .h = h },
                     .background = true,
-                    .color_fill = .{ .color = theme.color(.window, .fill).opacity(0.8) },
                     .corners = .all(3),
+                    .color_fill = .{ .color = dvui.themeGet().color(.window, .fill).opacity(0.8) },
                 });
-                defer lbox.deinit();
-                dvui.labelNoFmt(@src(), rel.label, .{}, .{ .gravity_x = 0.6 });
             }
         }
 

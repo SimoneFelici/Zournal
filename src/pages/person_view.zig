@@ -58,11 +58,6 @@ fn syncPersonName(s: *state.ProjectViewState, person_id: i64, name: []const u8) 
     }
 }
 
-fn personColor(s: *state.ProjectViewState, person_id: i64) types.AvatarColor {
-    const p = findPerson(s.people.items, person_id) orelse return .gray;
-    return p.color;
-}
-
 fn syncPersonColor(s: *state.ProjectViewState, person_id: i64, color: types.AvatarColor) void {
     if (findPerson(s.people.items, person_id)) |p| p.color = color;
     if (s.case_view) |*cv| {
@@ -107,6 +102,10 @@ fn removePersonFromState(s: *state.ProjectViewState, person_id: i64) void {
 
 pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) !void {
     var pv = &person_view.*.?;
+    const person = findPerson(s.people.items, pv.person_id) orelse {
+        person_view.* = null;
+        return;
+    };
     const db = s.db;
     const allocator = s.allocator();
 
@@ -124,28 +123,20 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
 
     // Avatar + color + name + rename + delete
     {
-        const avatar = pv.person_initials[0..pv.person_initials_len];
-        const current_color = personColor(s, pv.person_id);
+        const avatar = person.initials[0..person.initials_len];
+        const current_color = person.color;
 
         _ = dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = .all(AVATAR_SIZE), .color_fill = current_color.fill() });
 
         var name_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .gravity_x = 0.5 });
         defer name_row.deinit();
 
-        var picked = current_color;
-        var changed = false;
-
         if (colorDropdown(@src(), current_color, .{ .gravity_y = 0.5 })) |c| {
-            picked = c;
-            changed = true;
+            try db.updatePersonColor(pv.person_id, c);
+            syncPersonColor(s, pv.person_id, c);
         }
 
-        if (changed) {
-            try db.updatePersonColor(pv.person_id, picked);
-            syncPersonColor(s, pv.person_id, picked);
-        }
-
-        dvui.labelNoFmt(@src(), pv.person_name, .{}, .{ .gravity_y = 0.5 });
+        dvui.labelNoFmt(@src(), person.name, .{}, .{ .gravity_y = 0.5 });
 
         if (dvui.buttonIcon(@src(), "Edit Name", dvui.entypo.edit, .{ .draw_focus = false }, .{}, .{ .gravity_y = 0.5 })) {
             pv.edit_name_dialog = !pv.edit_name_dialog;
@@ -163,11 +154,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         var dialog_box = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
         defer dialog_box.deinit();
 
-        var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
-        const current = te.textGet();
-        if (current.len == 0 and pv.person_name.len > 0 and dvui.focusedWidgetId() != te.data().id) {
-            te.textSet(pv.person_name, false);
-        }
+        var te = dvui.textEntry(@src(), .{ .text_initial = person.name }, .{ .expand = .horizontal });
         const new_name = te.textGet();
         const enter = te.enter_pressed;
         te.deinit();
@@ -183,13 +170,6 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
                     return;
                 };
                 const duped = allocator.dupe(u8, new_name) catch unreachable;
-                pv.person_name = duped;
-
-                var tmp = types.PersonEntry{ .id = pv.person_id, .name = duped };
-                tmp.computeInitials();
-                pv.person_initials = tmp.initials;
-                pv.person_initials_len = tmp.initials_len;
-
                 syncPersonName(s, pv.person_id, duped);
                 pv.edit_name_dialog = false;
             }

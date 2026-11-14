@@ -102,7 +102,7 @@ pub fn render(page: *state.PageState) !void {
             };
 
             for (tab_entries) |entry| {
-                var tab = tabs.addTab(cv.tab == entry.tab, .{ .process_events = true }, .{ .expand = .horizontal });
+                var tab = tabs.addTab(cv.tab == entry.tab, .{}, .{ .expand = .horizontal });
                 defer tab.deinit();
                 switch (entry.tab) {
                     .people => dvui.label(@src(), "People ({d})", .{cv.people.items.len}, .{}),

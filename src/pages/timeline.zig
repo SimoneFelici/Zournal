@@ -210,26 +210,19 @@ fn renderEdges(ts: *state.TimelineState, canvas_rs: dvui.RectScale) void {
         dvui.Path.stroke(.{ .points = &.{ pt_a, pt_b } }, .{
             .thickness = 2.0 * canvas_rs.s,
             .color = .{ .color = dvui.themeGet().focus },
-            .closed = false,
         });
 
         if (conn.connection_type.len > 0) {
-            const theme = dvui.themeGet();
-            const lw = theme.font_body.textSize(conn.connection_type).w + 24.0;
-            var lbox = dvui.box(@src(), .{}, .{
+            const sz = dvui.themeGet().font_body.textSize(conn.connection_type);
+            const w = sz.w + 12;
+            const h = sz.h + 12;
+            dvui.labelNoFmt(@src(), conn.connection_type, .{}, .{
                 .id_extra = ci,
-                .rect = dvui.Rect{
-                    .x = (cx_a + cx_b) / 2.0 - lw / 2.0,
-                    .y = (evt_a.y + evt_b.y) / 2.0 + NODE_HALF_H - 14.0,
-                    .w = lw,
-                    .h = 28.0,
-                },
+                .rect = .{ .x = (cx_a + cx_b - w) / 2, .y = (evt_a.y + evt_b.y - h) / 2 + NODE_HALF_H, .w = w, .h = h },
                 .background = true,
                 .corners = .all(3),
-                .color_fill = .{ .color = theme.color(.window, .fill).opacity(0.8) },
+                .color_fill = .{ .color = dvui.themeGet().color(.window, .fill).opacity(0.8) },
             });
-            defer lbox.deinit();
-            dvui.labelNoFmt(@src(), conn.connection_type, .{}, .{ .gravity_x = 0.5 });
         }
     }
 }
