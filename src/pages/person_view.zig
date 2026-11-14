@@ -140,12 +140,17 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
 
         if (dvui.buttonIcon(@src(), "Edit Name", dvui.entypo.edit, .{ .draw_focus = false }, .{}, .{ .gravity_y = 0.5 })) {
             pv.edit_name_dialog = !pv.edit_name_dialog;
-            pv.delete_person_confirm = false;
         }
 
         if (dvui.buttonIcon(@src(), "Delete Person", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .gravity_y = 0.5, .style = .err })) {
-            pv.delete_person_confirm = !pv.delete_person_confirm;
-            pv.edit_name_dialog = false;
+            dvui.dialog(@src(), .{ .s = s, .pv = person_view, .person_id = pv.person_id }, .{
+                .title = "Delete Person?",
+                .message = "This person will be deleted.",
+                .ok_label = "Delete",
+                .cancel_label = "Cancel",
+                .default = .cancel,
+                .callafterFn = deletePerson,
+            });
         }
     }
 
@@ -176,29 +181,23 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         }
     }
 
-    // Delete person dialog
-    if (pv.delete_person_confirm) {
-        var confirm_box = dvui.box(@src(), .{ .dir = .horizontal }, .{ .gravity_x = 0.5 });
-        defer confirm_box.deinit();
-
-        dvui.labelNoFmt(@src(), "Delete this person?", .{}, .{ .gravity_y = 0.5 });
-
-        if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{})) {
-            pv.delete_person_confirm = false;
-        }
-
-        if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .style = .err })) {
-            const person_id = pv.person_id;
-            db.deletePerson(person_id) catch |err| {
-                std.log.err("Delete person failed: {}", .{err});
-                return;
-            };
-            removePersonFromState(s, person_id);
-            pv.notes.flushOpen(db);
-            person_view.* = null;
-            return;
-        }
-    }
-
     try notes_view.render(&pv.notes, db, allocator);
+}
+
+// Delete Person Dialog
+fn deletePerson(id: dvui.Id, response: dvui.enums.DialogResponse) !void {
+    if (response != .ok) return;
+    const s = dvui.dataGet(null, id, "s", *state.ProjectViewState) orelse return;
+    const pv = dvui.dataGet(null, id, "pv", *?state.PersonViewState) orelse return;
+    const person_id = dvui.dataGet(null, id, "person_id", i64) orelse return;
+
+    s.db.deletePerson(person_id) catch |err| {
+        std.log.err("Delete person failed: {}", .{err});
+        return;
+    };
+    removePersonFromState(s, person_id);
+    pv.* = null;
+
+    s.notes.reload(s.db, s.allocator());
+    if (s.case_view) |*cv| cv.notes.reload(s.db, s.allocator());
 }

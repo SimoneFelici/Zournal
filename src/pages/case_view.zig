@@ -31,20 +31,21 @@ pub fn render(page: *state.PageState) !void {
             dvui.label(@src(), "{s}", .{cv.case_name}, .{ .gravity_y = 0.5 });
             if (dvui.buttonIcon(@src(), "Rename", dvui.entypo.edit, .{ .draw_focus = false }, .{}, .{})) {
                 cv.rename_dialog = !cv.rename_dialog;
-                cv.delete_case_confirm = false;
             }
             if (dvui.buttonIcon(@src(), "Delete Case", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .style = .err })) {
-                cv.delete_case_confirm = !cv.delete_case_confirm;
-                cv.rename_dialog = false;
+                dvui.dialog(@src(), .{ .s = s, .case_id = cv.case_id }, .{
+                    .title = "Delete Case?",
+                    .message = "This case will be deleted.",
+                    .ok_label = "Delete",
+                    .cancel_label = "Cancel",
+                    .default = .cancel,
+                    .callafterFn = deleteCase,
+                });
             }
         }
 
         if (cv.rename_dialog) {
-            var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
-            const current = te.textGet();
-            if (current.len == 0 and cv.case_name.len > 0 and dvui.focusedWidgetId() != te.data().id) {
-                te.textSet(cv.case_name, false);
-            }
+            var te = dvui.textEntry(@src(), .{ .text_initial = cv.case_name }, .{ .expand = .horizontal });
             const new_name = te.textGet();
             const enter = te.enter_pressed;
             te.deinit();
@@ -64,30 +65,6 @@ pub fn render(page: *state.PageState) !void {
                     }
                     cv.rename_dialog = false;
                 }
-            }
-        }
-
-        if (cv.delete_case_confirm) {
-            dvui.labelNoFmt(@src(), "Are you sure?", .{}, .{ .gravity_x = 0.5 });
-
-            if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{ .expand = .horizontal })) {
-                cv.delete_case_confirm = false;
-            }
-
-            if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .expand = .horizontal, .style = .err })) {
-                s.db.deleteCase(cv.case_id) catch |err| {
-                    std.log.err("Delete case failed: {}", .{err});
-                    return;
-                };
-                for (s.cases.items, 0..) |c, ci| {
-                    if (c.id == cv.case_id) {
-                        _ = s.cases.orderedRemove(ci);
-                        break;
-                    }
-                }
-                s.case_view = null;
-                s.notes.reload(s.db, allocator);
-                return;
             }
         }
 
@@ -272,4 +249,24 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
             .max_size_content = .width(CARD_W_PEOPLE - 8.0),
         });
     }
+}
+
+// Delete Case Dialog
+fn deleteCase(id: dvui.Id, response: dvui.enums.DialogResponse) !void {
+    if (response != .ok) return;
+    const s = dvui.dataGet(null, id, "s", *state.ProjectViewState) orelse return;
+    const case_id = dvui.dataGet(null, id, "case_id", i64) orelse return;
+
+    s.db.deleteCase(case_id) catch |err| {
+        std.log.err("Delete case failed: {}", .{err});
+        return;
+    };
+    for (s.cases.items, 0..) |c, ci| {
+        if (c.id == case_id) {
+            _ = s.cases.orderedRemove(ci);
+            break;
+        }
+    }
+    s.case_view = null;
+    s.notes.reload(s.db, s.allocator());
 }
