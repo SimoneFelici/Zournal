@@ -2,7 +2,7 @@ const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
 const types = @import("../types.zig");
-const widgets = @import("../ui/widgets.zig");
+const db_utils = @import("../db_utils.zig");
 
 const NODE_MIN_W: f32 = 80.0;
 const NODE_MAX_W: f32 = 220.0;
@@ -28,7 +28,6 @@ pub fn render(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
     renderCanvas(s, ts);
 
     if (renderConnectDialog(s, ts)) return;
-    if (renderDeleteConnDialog(s, ts)) return;
     try renderEditDialog(s, ts);
 }
 
@@ -119,40 +118,6 @@ fn renderConnectDialog(s: *state.ProjectViewState, ts: *state.TimelineState) boo
             .connection_type = allocator.dupe(u8, conn_type) catch unreachable,
         }) catch unreachable;
         ts.connect_target_id = null;
-        ts.selected_id = null;
-    }
-    return false;
-}
-
-fn renderDeleteConnDialog(s: *state.ProjectViewState, ts: *state.TimelineState) bool {
-    const conn_id = ts.confirm_delete_conn_id orelse return false;
-
-    var show = true;
-    var fw = dvui.floatingWindow(@src(), .{}, .{
-        .min_size_content = .{ .w = 260, .h = 90 },
-    });
-    defer fw.deinit();
-
-    fw.dragAreaSet(dvui.windowHeader("Delete Connection?", "", &show));
-
-    if (!show) {
-        ts.confirm_delete_conn_id = null;
-        return true;
-    }
-
-    var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
-    defer btn_row.deinit();
-
-    if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{ .gravity_x = 0 })) {
-        ts.confirm_delete_conn_id = null;
-    }
-
-    if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .color_fill_hover = .{ .color = dvui.themeGet().color(.err, .fill) }, .gravity_x = 1 })) {
-        s.db.deleteEventConnection(conn_id) catch |err| {
-            std.log.err("Delete connection failed: {}", .{err});
-        };
-        removeConnectionById(ts, conn_id);
-        ts.confirm_delete_conn_id = null;
         ts.selected_id = null;
     }
     return false;
@@ -309,7 +274,7 @@ fn renderNode(s: *state.ProjectViewState, ts: *state.TimelineState, evt: *types.
                         std.log.err("Save event position failed: {}", .{err});
                     };
                 } else {
-                    handleClick(ts, evt.id);
+                    handleClick(s, ts, evt.id);
                 }
                 dvui.refresh(null, @src(), null);
             },
@@ -364,17 +329,37 @@ fn removeConnectionsFor(ts: *state.TimelineState, event_id: i64) void {
     }
 }
 
-fn handleClick(ts: *state.TimelineState, event_id: i64) void {
+fn handleClick(s: *state.ProjectViewState, ts: *state.TimelineState, event_id: i64) void {
     if (ts.selected_id == null) {
         ts.selected_id = event_id;
     } else if (ts.selected_id.? == event_id) {
         ts.editing_id = event_id;
     } else if (existingEventConn(ts.connections.items, ts.selected_id.?, event_id)) |conn_id| {
-        ts.confirm_delete_conn_id = conn_id;
         ts.selected_id = null;
+        dvui.dialog(@src(), .{ .ts = ts, .db = s.db, .conn_id = conn_id }, .{
+            .title = "Delete Connection?",
+            .message = "This connection will be removed.",
+            .ok_label = "Delete",
+            .cancel_label = "Cancel",
+            .default = .cancel,
+            .callafterFn = deleteConnection,
+        });
     } else {
         ts.connect_target_id = event_id;
     }
+}
+
+fn deleteConnection(id: dvui.Id, response: dvui.enums.DialogResponse) !void {
+    if (response != .ok) return;
+    const ts = dvui.dataGet(null, id, "ts", *state.TimelineState) orelse return;
+    const db = dvui.dataGet(null, id, "db", db_utils.Database) orelse return;
+    const conn_id = dvui.dataGet(null, id, "conn_id", i64) orelse return;
+
+    db.deleteEventConnection(conn_id) catch |err| {
+        std.log.err("Delete connection failed: {}", .{err});
+        return;
+    };
+    removeConnectionById(ts, conn_id);
 }
 
 fn existingEventConn(connections: []const types.EventConnection, a: i64, b: i64) ?i64 {

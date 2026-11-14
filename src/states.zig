@@ -140,7 +140,6 @@ pub const RelationshipsState = struct {
     positions: std.ArrayList(types.NodePos) = .empty,
     selected_id: ?i64 = null,
     connect_target_id: ?i64 = null,
-    confirm_delete_conn_id: ?i64 = null,
     loaded: bool = false,
 
     pub fn load(self: *RelationshipsState, db: db_utils.Database, people: []const types.PersonEntry, allocator: std.mem.Allocator) !void {
@@ -170,7 +169,6 @@ pub const TimelineState = struct {
     selected_id: ?i64 = null,
     connect_target_id: ?i64 = null,
     editing_id: ?i64 = null,
-    confirm_delete_conn_id: ?i64 = null,
     new_event_dialog: bool = false,
     loaded: bool = false,
 

@@ -2,6 +2,7 @@ const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
 const types = @import("../types.zig");
+const db_utils = @import("../db_utils.zig");
 
 const NODE_SIZE: f32 = 60;
 const HALF: f32 = NODE_SIZE / 2;
@@ -116,7 +117,7 @@ pub fn render(page: *state.PageState) !void {
                                         std.log.err("Save position failed: {}", .{err});
                                     };
                                 } else {
-                                    handleClick(rs, person.id);
+                                    handleClick(s, person.id);
                                 }
                                 dvui.refresh(null, @src(), null);
                             }
@@ -204,57 +205,44 @@ pub fn render(page: *state.PageState) !void {
             }
         }
     }
-
-    // Delete relationship dialog
-    if (rs.confirm_delete_conn_id) |conn_id| {
-        var show = true;
-        var fw = dvui.floatingWindow(@src(), .{}, .{
-            .min_size_content = .{ .w = 260, .h = 90 },
-        });
-        defer fw.deinit();
-
-        fw.dragAreaSet(dvui.windowHeader("Delete Relationship?", "", &show));
-
-        if (!show) {
-            rs.confirm_delete_conn_id = null;
-            return;
-        }
-
-        {
-            var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
-            defer btn_row.deinit();
-
-            if (dvui.button(@src(), "Cancel", .{ .draw_focus = false }, .{ .gravity_x = 0 })) {
-                rs.confirm_delete_conn_id = null;
-            }
-
-            if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .color_fill_hover = .{ .color = dvui.themeGet().color(.err, .fill) }, .gravity_x = 1 })) {
-                s.db.deleteRelationship(conn_id) catch |err| {
-                    std.log.err("Delete relationship failed: {}", .{err});
-                };
-                for (rs.relationships.items, 0..) |r, ri| {
-                    if (r.id == conn_id) {
-                        _ = rs.relationships.orderedRemove(ri);
-                        break;
-                    }
-                }
-                rs.confirm_delete_conn_id = null;
-                rs.selected_id = null;
-            }
-        }
-    }
 }
 
-fn handleClick(rs: *state.RelationshipsState, person_id: i64) void {
+fn handleClick(s: *state.ProjectViewState, person_id: i64) void {
+    const rs = &s.relationships;
     if (rs.selected_id == null) {
         rs.selected_id = person_id;
     } else if (rs.selected_id.? == person_id) {
         rs.selected_id = null;
     } else if (existingRelConn(rs.relationships.items, rs.selected_id.?, person_id)) |conn_id| {
-        rs.confirm_delete_conn_id = conn_id;
         rs.selected_id = null;
+        dvui.dialog(@src(), .{ .rs = rs, .db = s.db, .conn_id = conn_id }, .{
+            .title = "Delete Relationship?",
+            .message = "This relationship will be removed.",
+            .ok_label = "Delete",
+            .cancel_label = "Cancel",
+            .default = .cancel,
+            .callafterFn = deleteRelationship,
+        });
     } else {
         rs.connect_target_id = person_id;
+    }
+}
+
+fn deleteRelationship(id: dvui.Id, response: dvui.enums.DialogResponse) !void {
+    if (response != .ok) return;
+    const rs = dvui.dataGet(null, id, "rs", *state.RelationshipsState) orelse return;
+    const db = dvui.dataGet(null, id, "db", db_utils.Database) orelse return;
+    const conn_id = dvui.dataGet(null, id, "conn_id", i64) orelse return;
+
+    db.deleteRelationship(conn_id) catch |err| {
+        std.log.err("Delete relationship failed: {}", .{err});
+        return;
+    };
+    for (rs.relationships.items, 0..) |r, i| {
+        if (r.id == conn_id) {
+            _ = rs.relationships.orderedRemove(i);
+            break;
+        }
     }
 }
 
