@@ -103,7 +103,6 @@ fn removePersonFromState(s: *state.ProjectViewState, person_id: i64) void {
     }
     if (r.selected_id != null and r.selected_id.? == person_id) r.selected_id = null;
     if (r.connect_target_id != null and r.connect_target_id.? == person_id) r.connect_target_id = null;
-    if (r.dragging_id != null and r.dragging_id.? == person_id) r.dragging_id = null;
 }
 
 pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) !void {

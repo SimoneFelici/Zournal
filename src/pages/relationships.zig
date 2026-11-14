@@ -102,23 +102,22 @@ pub fn render(page: *state.PageState) !void {
                             if (me.button == .left) {
                                 e.handle(@src(), node.data());
                                 dvui.captureMouse(node.data(), e.num);
-                                dvui.dragPreStart(me.button, me.p, .{ .cursor = .hand });
-                                rs.dragging_id = null;
+                                dvui.dragPreStart(me.button, me.p, .{ .cursor = .hand, .name = "node" });
                             }
                         },
                         .release => {
                             if (me.button == .left and dvui.captured(node.data().id)) {
                                 e.handle(@src(), node.data());
                                 dvui.captureMouse(null, e.num);
+                                const was_drag = dvui.dragName("node");
                                 dvui.dragEnd(me.button);
-                                if (rs.dragging_id != person.id) {
-                                    handleClick(rs, person.id);
-                                } else {
+                                if (was_drag) {
                                     s.db.saveNodePosition(person.id, pos.x, pos.y) catch |err| {
                                         std.log.err("Save position failed: {}", .{err});
                                     };
+                                } else {
+                                    handleClick(rs, person.id);
                                 }
-                                rs.dragging_id = null;
                                 dvui.refresh(null, @src(), null);
                             }
                         },
@@ -133,7 +132,6 @@ pub fn render(page: *state.PageState) !void {
                                     const ch = canvas_rs.r.h / canvas_rs.s;
                                     pos.x = @max(off, @min(pos.x, cw - nw + off));
                                     pos.y = @max(0.0, @min(pos.y, ch - NODE_SIZE - 24.0));
-                                    rs.dragging_id = person.id;
                                 }
                             }
                         },

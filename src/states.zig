@@ -140,7 +140,6 @@ pub const RelationshipsState = struct {
     positions: std.ArrayList(types.NodePos) = .empty,
     selected_id: ?i64 = null,
     connect_target_id: ?i64 = null,
-    dragging_id: ?i64 = null,
     confirm_delete_conn_id: ?i64 = null,
     loaded: bool = false,
 
@@ -170,7 +169,6 @@ pub const TimelineState = struct {
     connections: std.ArrayList(types.EventConnection) = .empty,
     selected_id: ?i64 = null,
     connect_target_id: ?i64 = null,
-    dragging_id: ?i64 = null,
     editing_id: ?i64 = null,
     confirm_delete_conn_id: ?i64 = null,
     new_event_dialog: bool = false,

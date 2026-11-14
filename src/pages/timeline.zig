@@ -297,21 +297,20 @@ fn renderNode(s: *state.ProjectViewState, ts: *state.TimelineState, evt: *types.
             .press => if (me.button == .left) {
                 e.handle(@src(), node.data());
                 dvui.captureMouse(node.data(), e.num);
-                dvui.dragPreStart(me.button, me.p, .{ .cursor = .hand });
-                ts.dragging_id = null;
+                dvui.dragPreStart(me.button, me.p, .{ .cursor = .hand, .name = "node" });
             },
             .release => if (me.button == .left and dvui.captured(node.data().id)) {
                 e.handle(@src(), node.data());
                 dvui.captureMouse(null, e.num);
+                const was_drag = dvui.dragName("node");
                 dvui.dragEnd(me.button);
-                if (ts.dragging_id != evt.id) {
-                    handleClick(ts, evt.id);
-                } else {
+                if (was_drag) {
                     s.db.updateTimelineEventPosition(evt.id, evt.x, evt.y) catch |err| {
                         std.log.err("Save event position failed: {}", .{err});
                     };
+                } else {
+                    handleClick(ts, evt.id);
                 }
-                ts.dragging_id = null;
                 dvui.refresh(null, @src(), null);
             },
             .motion => if (dvui.captured(node.data().id)) {
@@ -322,7 +321,6 @@ fn renderNode(s: *state.ProjectViewState, ts: *state.TimelineState, evt: *types.
                     const ch = canvas_rs.r.h / canvas_rs.s;
                     evt.x = @max(0.0, @min(evt.x + dp.x, cw - nw));
                     evt.y = @max(0.0, @min(evt.y + dp.y, ch - NODE_HALF_H * 2.0 - 10.0));
-                    ts.dragging_id = evt.id;
                 }
             },
             .position => dvui.cursorSet(.hand),
