@@ -45,26 +45,6 @@ fn findPerson(list: []types.PersonEntry, person_id: i64) ?*types.PersonEntry {
     return null;
 }
 
-fn syncPersonName(s: *state.ProjectViewState, person_id: i64, name: []const u8) void {
-    if (findPerson(s.people.items, person_id)) |p| {
-        p.name = name;
-        p.computeInitials();
-    }
-    if (s.case_view) |*cv| {
-        if (findPerson(cv.people.items, person_id)) |p| {
-            p.name = name;
-            p.computeInitials();
-        }
-    }
-}
-
-fn syncPersonColor(s: *state.ProjectViewState, person_id: i64, color: types.AvatarColor) void {
-    if (findPerson(s.people.items, person_id)) |p| p.color = color;
-    if (s.case_view) |*cv| {
-        if (findPerson(cv.people.items, person_id)) |p| p.color = color;
-    }
-}
-
 fn removePersonFromState(s: *state.ProjectViewState, person_id: i64) void {
     var i: usize = 0;
     while (i < s.people.items.len) {
@@ -74,12 +54,7 @@ fn removePersonFromState(s: *state.ProjectViewState, person_id: i64) void {
     }
 
     if (s.case_view) |*cv| {
-        i = 0;
-        while (i < cv.people.items.len) {
-            if (cv.people.items[i].id == person_id) {
-                _ = cv.people.orderedRemove(i);
-            } else i += 1;
-        }
+        if (std.mem.findScalar(i64, cv.person_ids.items, person_id)) |idx| _ = cv.person_ids.orderedRemove(idx);
     }
 
     var r = &s.relationships;
@@ -133,7 +108,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
 
         if (colorDropdown(@src(), current_color, .{ .gravity_y = 0.5 })) |c| {
             try db.updatePersonColor(pv.person_id, c);
-            syncPersonColor(s, pv.person_id, c);
+            person.color = c;
         }
 
         dvui.labelNoFmt(@src(), person.name, .{}, .{ .gravity_y = 0.5 });
@@ -175,7 +150,8 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
                     return;
                 };
                 const duped = try allocator.dupe(u8, new_name);
-                syncPersonName(s, pv.person_id, duped);
+                person.name = duped;
+                person.computeInitials();
                 pv.edit_name_dialog = false;
             }
         }

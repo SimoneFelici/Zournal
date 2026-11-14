@@ -108,29 +108,18 @@ pub const Database = struct {
     }
 
     // People (case-scoped)
-    pub fn listPeopleForCase(self: Database, case_id: i64, allocator: std.mem.Allocator) !std.ArrayList(types.PersonEntry) {
-        var people: std.ArrayList(types.PersonEntry) = .empty;
+    pub fn listPersonIdsForCase(self: Database, case_id: i64, allocator: std.mem.Allocator) !std.ArrayList(i64) {
+        var ids: std.ArrayList(i64) = .empty;
 
         var rows = self.conn.rows(
-            "SELECT p.id, p.p_name, p.color FROM People p JOIN People_Cases pc ON pc.people_id = p.id WHERE pc.case_id = ? ORDER BY p.p_name ASC",
+            "SELECT people_id FROM People_Cases WHERE case_id = ?",
             .{case_id},
         ) catch return error.QueryFailed;
         defer rows.deinit();
 
-        while (rows.next()) |row| {
-            const id = row.int(0);
-            const name = allocator.dupe(u8, row.text(1)) catch return error.OutOfMemory;
-            var entry = types.PersonEntry{
-                .id = id,
-                .name = name,
-                .color = @fromBackingInt(@intCast(row.int(2))),
-            };
-            entry.computeInitials();
-            people.append(allocator, entry) catch return error.OutOfMemory;
-        }
+        while (rows.next()) |row| try ids.append(allocator, row.int(0));
         if (rows.err) |err| return err;
-
-        return people;
+        return ids;
     }
 
     pub fn createPersonInCase(self: Database, name: []const u8, case_id: i64) !i64 {

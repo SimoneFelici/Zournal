@@ -82,7 +82,7 @@ pub fn render(page: *state.PageState) !void {
                 var tab = tabs.addTab(cv.tab == entry.tab, .{}, .{ .expand = .horizontal });
                 defer tab.deinit();
                 switch (entry.tab) {
-                    .people => dvui.label(@src(), "People ({d})", .{cv.people.items.len}, .{}),
+                    .people => dvui.label(@src(), "People ({d})", .{cv.person_ids.items.len}, .{}),
                     .notes => dvui.label(@src(), "Notes ({d})", .{cv.notes.notes.items.len}, .{}),
                     else => dvui.labelNoFmt(@src(), entry.label, .{}, .{}),
                 }
@@ -172,7 +172,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 const duped = try allocator.dupe(u8, name);
                 var new_person = types.PersonEntry{ .id = id, .name = duped };
                 new_person.computeInitials();
-                try cv.people.append(allocator, new_person);
+                try cv.person_ids.append(allocator, id);
                 try s.people.append(allocator, new_person);
                 cv.new_person_dialog = false;
             }
@@ -201,10 +201,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
         defer scroll.deinit();
 
         for (s.people.items, 0..) |person, i| {
-            const in_case = for (cv.people.items) |cp| {
-                if (cp.id == person.id) break true;
-            } else false;
-            if (in_case) continue;
+            if (std.mem.findScalar(i64, cv.person_ids.items, person.id) != null) continue;
             if (!widgets.matches(person.name, query)) continue;
 
             if (dvui.button(@src(), person.name, .{ .draw_focus = false }, .{
@@ -215,7 +212,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                     std.log.err("Link person to case failed: {}", .{err});
                     continue;
                 };
-                try cv.people.append(allocator, person);
+                try cv.person_ids.append(allocator, person.id);
             }
         }
     }
@@ -226,7 +223,8 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
     var flex = dvui.flexbox(@src(), .{ .justify_content = .start }, .{ .expand = .horizontal });
     defer flex.deinit();
 
-    for (cv.people.items, 0..) |person, i| {
+    for (s.people.items, 0..) |person, i| {
+        if (std.mem.findScalar(i64, cv.person_ids.items, person.id) == null) continue;
         if (!widgets.matches(person.name, grid_query)) continue;
 
         var card = dvui.box(@src(), .{ .dir = .vertical }, .{

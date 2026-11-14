@@ -178,7 +178,7 @@ pub const CaseViewState = struct {
     case_id: i64,
     case_name: []const u8,
     tab: Tab = .people,
-    people: std.ArrayList(types.PersonEntry) = .empty,
+    person_ids: std.ArrayList(i64) = .empty,
     notes: notes_view.NotesState,
     timeline: TimelineState = .{},
     new_person_dialog: bool = false,
@@ -207,7 +207,7 @@ pub const CaseViewState = struct {
         try self.notes.load(db, allocator);
 
         if (self.loaded) return;
-        self.people = try db.listPeopleForCase(self.case_id, allocator);
+        self.person_ids = try db.listPersonIdsForCase(self.case_id, allocator);
         self.loaded = true;
     }
 };
