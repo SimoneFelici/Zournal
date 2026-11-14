@@ -115,8 +115,8 @@ pub const ProjectViewState = struct {
 pub const PersonViewState = struct {
     person_id: i64,
     person_name: []const u8,
-    person_initials: [2]u8 = .{ 0, 0 },
-    person_initials_len: u2 = 0,
+    person_initials: [8]u8 = @splat(0),
+    person_initials_len: u8 = 0,
     notes: notes_view.NotesState,
     edit_name_dialog: bool = false,
     delete_person_confirm: bool = false,

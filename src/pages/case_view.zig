@@ -281,9 +281,10 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 cv.person_view = state.PersonViewState.init(person, cv.case_id);
             }
 
-            dvui.labelNoFmt(@src(), widgets.fitText(person.name, CARD_W_PEOPLE - 8.0), .{}, .{
+            dvui.labelNoFmt(@src(), person.name, .{}, .{
                 .id_extra = idx,
                 .gravity_x = 0.5,
+                .max_size_content = .width(CARD_W_PEOPLE - 8.0),
             });
         }
     }

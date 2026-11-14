@@ -96,9 +96,10 @@ pub fn render(page: *state.PageState) !void {
                     s.person_view = state.PersonViewState.init(person, null);
                 }
 
-                dvui.labelNoFmt(@src(), widgets.fitText(person.name, CARD_W - 8.0), .{}, .{
+                dvui.labelNoFmt(@src(), person.name, .{}, .{
                     .id_extra = idx,
                     .gravity_x = 0.5,
+                    .max_size_content = .width(CARD_W - 8.0),
                 });
             }
         }

@@ -147,7 +147,7 @@ pub fn render(
                 var card = dvui.box(@src(), .{ .dir = .vertical }, .{ .id_extra = key });
                 defer card.deinit();
 
-                if (dvui.button(@src(), widgets.fitText(note.title, CARD_W - 16), .{ .draw_focus = false }, .{ .id_extra = key, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = .all(3) })) {
+                if (dvui.button(@src(), note.title, .{ .draw_focus = false }, .{ .id_extra = key, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .max_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = .all(3) })) {
                     ns.openNote(allocator, note.id);
                 }
             }

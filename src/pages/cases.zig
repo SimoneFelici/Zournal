@@ -59,7 +59,7 @@ pub fn render(page: *state.PageState) !void {
                 if (!widgets.matches(case_entry.name, query)) continue;
                 c += 1;
                 shown += 1;
-                if (dvui.button(@src(), widgets.fitText(case_entry.name, CARD_W - 16), .{ .draw_focus = false }, .{ .id_extra = i, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = .all(3) })) {
+                if (dvui.button(@src(), case_entry.name, .{ .draw_focus = false }, .{ .id_extra = i, .min_size_content = .{ .w = CARD_W, .h = CARD_H }, .max_size_content = .{ .w = CARD_W, .h = CARD_H }, .corners = .all(3) })) {
                     s.case_view = state.CaseViewState.init(case_entry);
                 }
             }

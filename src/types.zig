@@ -33,30 +33,31 @@ pub const AvatarColor = enum(u8) {
 pub const PersonEntry = struct {
     id: i64,
     name: []const u8,
-    initials: [2]u8 = .{ 0, 0 },
-    initials_len: u2 = 0,
+    initials: [8]u8 = @splat(0),
+    initials_len: u8 = 0,
     color: AvatarColor = .gray,
 
     pub fn computeInitials(self: *PersonEntry) void {
-        var it = std.mem.splitScalar(u8, self.name, ' ');
-        const first = it.next();
-        const second = it.next();
         self.initials_len = 0;
-        if (first) |f| {
-            if (f.len > 0) {
-                self.initials[self.initials_len] = std.ascii.toUpper(f[0]);
-                self.initials_len += 1;
-            }
-            if (second) |s| {
-                if (s.len > 0) {
-                    self.initials[self.initials_len] = std.ascii.toUpper(s[0]);
-                    self.initials_len += 1;
-                }
-            } else if (f.len > 1) {
-                self.initials[self.initials_len] = std.ascii.toUpper(f[1]);
-                self.initials_len += 1;
-            }
-        }
+        var words = std.mem.tokenizeScalar(u8, self.name, ' ');
+        const first = words.next() orelse return;
+
+        var it = (std.unicode.Utf8View.init(first) catch return).iterator();
+        if (it.nextCodepointSlice()) |c| self.appendInitial(c);
+
+        const next = if (words.next()) |w| firstChar(w) else it.nextCodepointSlice();
+        if (next) |c| self.appendInitial(c);
+    }
+
+    fn firstChar(word: []const u8) ?[]const u8 {
+        var it = (std.unicode.Utf8View.init(word) catch return null).iterator();
+        return it.nextCodepointSlice();
+    }
+
+    fn appendInitial(self: *PersonEntry, c: []const u8) void {
+        @memcpy(self.initials[self.initials_len..][0..c.len], c);
+        if (c.len == 1) self.initials[self.initials_len] = std.ascii.toUpper(c[0]);
+        self.initials_len += @intCast(c.len);
     }
 };
 

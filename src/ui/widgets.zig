@@ -41,18 +41,6 @@ pub fn matches(text: []const u8, query: []const u8) bool {
     return query.len == 0 or std.ascii.findIgnoreCase(text, query) != null;
 }
 
-pub fn fitText(text: []const u8, max_w: f32) []const u8 {
-    const font = dvui.themeGet().font_body;
-    if (font.textSize(text).w <= max_w) return text;
-    var end: usize = text.len;
-    while (end > 0) {
-        end -= 1;
-        while (end > 0 and (text[end] & 0xC0) == 0x80) end -= 1;
-        if (font.textSize(text[0..end]).w <= max_w) return text[0..end];
-    }
-    return text[0..0];
-}
-
 // Text entry
 pub fn syncText(te: *dvui.TextEntryWidget, stored: *[]const u8, allocator: std.mem.Allocator) void {
     if (te.textGet().len == 0 and stored.len > 0 and dvui.focusedWidgetId() != te.data().id) {
