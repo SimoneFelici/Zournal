@@ -153,7 +153,7 @@ pub fn render(page: *state.PageState) !void {
 fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
     const allocator = s.allocator();
 
-    var grid_search_open = false;
+    var grid_query: []const u8 = "";
     {
         var btn_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
         defer btn_row.deinit();
@@ -163,7 +163,9 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
             cv.new_person_dialog = false;
         }
 
-        grid_search_open = widgets.searchToggle(@src());
+        var search = dvui.textEntry(@src(), .{ .placeholder = "Search..." }, .{ .gravity_x = 0.5 });
+        grid_query = search.textGet();
+        search.deinit();
 
         if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .style = .highlight, .gravity_x = 1 })) {
             cv.new_person_dialog = !cv.new_person_dialog;
@@ -214,7 +216,9 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
             return;
         }
 
-        const query = widgets.searchBox(@src());
+        var search = dvui.textEntry(@src(), .{ .placeholder = "Search..." }, .{ .expand = .horizontal });
+        const query = search.textGet();
+        search.deinit();
 
         var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
         defer scroll.deinit();
@@ -224,7 +228,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                 if (cp.id == person.id) break true;
             } else false;
             if (in_case) continue;
-            if (query.len > 0 and std.ascii.findIgnoreCase(person.name, query) == null) continue;
+            if (!widgets.matches(person.name, query)) continue;
 
             if (dvui.button(@src(), person.name, .{ .draw_focus = false }, .{
                 .id_extra = i,
@@ -238,8 +242,6 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
             }
         }
     }
-
-    const grid_query: []const u8 = if (grid_search_open) widgets.searchEntry(@src()) else "";
 
     var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
     defer scroll.deinit();

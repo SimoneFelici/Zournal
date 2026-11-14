@@ -69,12 +69,14 @@ pub fn render(
 ) !void {
     try ns.load(db, allocator);
 
-    var search_open = false;
+    var query: []const u8 = "";
     {
         var top_bar = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
         defer top_bar.deinit();
 
-        search_open = widgets.searchToggle(@src());
+        var search = dvui.textEntry(@src(), .{ .placeholder = "Search..." }, .{ .gravity_x = 0.5 });
+        query = search.textGet();
+        search.deinit();
 
         if (dvui.buttonIcon(@src(), "New Note", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .style = .highlight, .gravity_x = 1 })) {
             ns.new_note_dialog = !ns.new_note_dialog;
@@ -113,8 +115,6 @@ pub fn render(
             }
         }
     }
-
-    const query: []const u8 = if (search_open) widgets.searchEntry(@src()) else "";
 
     // Notes grid
     {
