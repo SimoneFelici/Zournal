@@ -188,13 +188,13 @@ pub fn render(page: *state.PageState) !void {
                         std.log.err("Create relationship failed: {}", .{err});
                         return;
                     };
-                    const duped = allocator.dupe(u8, label_text) catch unreachable;
-                    rs.relationships.append(allocator, .{
+                    const duped = try allocator.dupe(u8, label_text);
+                    try rs.relationships.append(allocator, .{
                         .id = id,
                         .person_a_id = rs.selected_id.?,
                         .person_b_id = rs.connect_target_id.?,
                         .label = duped,
-                    }) catch unreachable;
+                    });
                     rs.connect_target_id = null;
                     rs.selected_id = null;
                 }

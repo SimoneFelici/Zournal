@@ -26,8 +26,8 @@ pub fn render(page: *state.PageState) !void {
                 std.log.err("Create case failed: {}", .{err});
                 return;
             };
-            const name = std.fmt.allocPrint(allocator, "Case #{d}", .{id}) catch unreachable;
-            s.cases.insert(allocator, 0, .{ .id = id, .name = name }) catch unreachable;
+            const name = try std.fmt.allocPrint(allocator, "Case #{d}", .{id});
+            try s.cases.insert(allocator, 0, .{ .id = id, .name = name });
         }
     }
 

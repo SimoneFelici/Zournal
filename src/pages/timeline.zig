@@ -23,15 +23,15 @@ pub fn render(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
         }
     }
 
-    if (renderNewEventDialog(s, cv, ts)) return;
+    if (try renderNewEventDialog(s, cv, ts)) return;
 
     renderCanvas(s, ts);
 
-    if (renderConnectDialog(s, ts)) return;
+    if (try renderConnectDialog(s, ts)) return;
     try renderEditDialog(s, ts);
 }
 
-fn renderNewEventDialog(s: *state.ProjectViewState, cv: *state.CaseViewState, ts: *state.TimelineState) bool {
+fn renderNewEventDialog(s: *state.ProjectViewState, cv: *state.CaseViewState, ts: *state.TimelineState) !bool {
     if (!ts.new_event_dialog) return false;
     const allocator = s.allocator();
 
@@ -56,13 +56,13 @@ fn renderNewEventDialog(s: *state.ProjectViewState, cv: *state.CaseViewState, ts
                 std.log.err("Create timeline event failed: {}", .{err});
                 return true;
             };
-            ts.events.append(allocator, .{
+            try ts.events.append(allocator, .{
                 .id = id,
-                .label = allocator.dupe(u8, title) catch unreachable,
-                .content = allocator.dupe(u8, "") catch unreachable,
+                .label = try allocator.dupe(u8, title),
+                .content = "",
                 .x = nx,
                 .y = ny,
-            }) catch unreachable;
+            });
             ts.new_event_dialog = false;
             ts.editing_id = id;
         }
@@ -70,7 +70,7 @@ fn renderNewEventDialog(s: *state.ProjectViewState, cv: *state.CaseViewState, ts
     return false;
 }
 
-fn renderConnectDialog(s: *state.ProjectViewState, ts: *state.TimelineState) bool {
+fn renderConnectDialog(s: *state.ProjectViewState, ts: *state.TimelineState) !bool {
     if (ts.connect_target_id == null or ts.selected_id == null) return false;
     const allocator = s.allocator();
 
@@ -111,12 +111,12 @@ fn renderConnectDialog(s: *state.ProjectViewState, ts: *state.TimelineState) boo
             std.log.err("Create connection failed: {}", .{err});
             return true;
         };
-        ts.connections.append(allocator, .{
+        try ts.connections.append(allocator, .{
             .id = id,
             .from_id = ts.selected_id.?,
             .to_id = ts.connect_target_id.?,
-            .connection_type = allocator.dupe(u8, conn_type) catch unreachable,
-        }) catch unreachable;
+            .connection_type = try allocator.dupe(u8, conn_type),
+        });
         ts.connect_target_id = null;
         ts.selected_id = null;
     }

@@ -55,7 +55,7 @@ pub fn render(page: *state.PageState) !void {
                     s.db.renameCase(cv.case_id, new_name) catch |err| {
                         std.log.err("Rename case failed: {}", .{err});
                     };
-                    const duped = allocator.dupe(u8, new_name) catch unreachable;
+                    const duped = try allocator.dupe(u8, new_name);
                     cv.case_name = duped;
                     for (s.cases.items) |*c| {
                         if (c.id == cv.case_id) {
@@ -169,11 +169,11 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                     std.log.err("Create person in case failed: {}", .{err});
                     return;
                 };
-                const duped = allocator.dupe(u8, name) catch unreachable;
+                const duped = try allocator.dupe(u8, name);
                 var new_person = types.PersonEntry{ .id = id, .name = duped };
                 new_person.computeInitials();
-                cv.people.append(allocator, new_person) catch unreachable;
-                s.people.append(allocator, new_person) catch unreachable;
+                try cv.people.append(allocator, new_person);
+                try s.people.append(allocator, new_person);
                 cv.new_person_dialog = false;
             }
         }
@@ -215,7 +215,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
                     std.log.err("Link person to case failed: {}", .{err});
                     continue;
                 };
-                cv.people.append(allocator, person) catch unreachable;
+                try cv.people.append(allocator, person);
             }
         }
     }

@@ -92,11 +92,11 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
                         continue;
                     };
                     const stem = std.Io.Dir.path.stem(path);
-                    const name = allocator.dupe(u8, stem) catch unreachable;
-                    s.projects.insert(allocator, 0, .{
+                    const name = try allocator.dupe(u8, stem);
+                    try s.projects.insert(allocator, 0, .{
                         .name = name,
                         .mtime = std.Io.Clock.now(.real, io),
-                    }) catch unreachable;
+                    });
                 }
             }
         }
@@ -137,11 +137,11 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
                         }
                         return .ok;
                     };
-                    const duped = allocator.dupe(u8, name) catch unreachable;
-                    s.projects.insert(allocator, 0, .{
+                    const duped = try allocator.dupe(u8, name);
+                    try s.projects.insert(allocator, 0, .{
                         .name = duped,
                         .mtime = std.Io.Clock.now(.real, io),
-                    }) catch unreachable;
+                    });
 
                     s.new_project_dialog = false;
                 }

@@ -54,11 +54,11 @@ pub const NotesState = struct {
         };
     }
 
-    fn openNote(self: *NotesState, allocator: std.mem.Allocator, note_id: i64) void {
+    fn openNote(self: *NotesState, allocator: std.mem.Allocator, note_id: i64) !void {
         for (self.open_notes.items) |oid| {
             if (oid == note_id) return;
         }
-        self.open_notes.append(allocator, note_id) catch unreachable;
+        try self.open_notes.append(allocator, note_id);
     }
 };
 
@@ -102,16 +102,16 @@ pub fn render(
                     std.log.err("Create note failed: {}", .{err});
                     return;
                 };
-                const duped_title = allocator.dupe(u8, title) catch unreachable;
-                const duped_content = allocator.dupe(u8, "") catch unreachable;
-                ns.notes.insert(allocator, 0, .{
+                const duped_title = try allocator.dupe(u8, title);
+                const duped_content = "";
+                try ns.notes.insert(allocator, 0, .{
                     .id = id,
                     .case_id = ns.scopeCaseId(),
                     .title = duped_title,
                     .content = duped_content,
-                }) catch unreachable;
+                });
                 ns.new_note_dialog = false;
-                ns.openNote(allocator, id);
+                try ns.openNote(allocator, id);
             }
         }
     }
@@ -132,7 +132,7 @@ pub fn render(
                 .max_size_content = .{ .w = CARD_W, .h = CARD_H },
                 .corners = .all(3),
             })) {
-                ns.openNote(allocator, note.id);
+                try ns.openNote(allocator, note.id);
             }
         }
     }

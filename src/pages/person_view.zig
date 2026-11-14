@@ -174,7 +174,7 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
                     std.log.err("Update person failed: {}", .{err});
                     return;
                 };
-                const duped = allocator.dupe(u8, new_name) catch unreachable;
+                const duped = try allocator.dupe(u8, new_name);
                 syncPersonName(s, pv.person_id, duped);
                 pv.edit_name_dialog = false;
             }

@@ -46,10 +46,10 @@ pub fn render(page: *state.PageState) !void {
                     std.log.err("Create person failed: {}", .{err});
                     return;
                 };
-                const duped = allocator.dupe(u8, name) catch unreachable;
+                const duped = try allocator.dupe(u8, name);
                 var new_person = types.PersonEntry{ .id = id, .name = duped };
                 new_person.computeInitials();
-                s.people.append(allocator, new_person) catch unreachable;
+                try s.people.append(allocator, new_person);
                 s.new_person_dialog = false;
             }
         }
