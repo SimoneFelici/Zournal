@@ -9,9 +9,7 @@ const colors = @import("../ui/colors.zig");
 
 pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
     var s = &page.project_select;
-    // Arena
     const allocator = s.allocator();
-    // gpa for temp stuff
     const temp_allocator = ctx.allocator;
     const io = ctx.io;
 

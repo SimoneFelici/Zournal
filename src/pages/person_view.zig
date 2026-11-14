@@ -7,6 +7,38 @@ const colors = @import("../ui/colors.zig");
 
 const AVATAR_SIZE: f32 = 80;
 
+fn colorDropdown(src: std.builtin.SourceLocation, current: types.AvatarColor, opts: dvui.Options) ?types.AvatarColor {
+    var result: ?types.AvatarColor = null;
+
+    var dd: dvui.DropdownWidget = undefined;
+    dd.init(src, .{
+        .selected_index = @backingInt(current),
+        .label = @tagName(current),
+    }, opts);
+    defer dd.deinit();
+
+    if (dd.dropped()) {
+        for (std.enums.values(types.AvatarColor)) |c| {
+            var mi = dd.addChoice();
+            defer mi.deinit();
+
+            var sw = dvui.box(@src(), .{}, .{
+                .min_size_content = .{ .w = 70, .h = 15 },
+                .background = true,
+                .color_fill = c.fill(),
+                .expand = .both,
+            });
+            sw.deinit();
+
+            if (mi.activeRect() != null) {
+                dd.close();
+                result = c;
+            }
+        }
+    }
+    return result;
+}
+
 fn findPerson(list: []types.PersonEntry, person_id: i64) ?*types.PersonEntry {
     for (list) |*p| {
         if (p.id == person_id) return p;
@@ -105,36 +137,9 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         var picked = current_color;
         var changed = false;
 
-        {
-            var dd: dvui.DropdownWidget = undefined;
-            dd.init(@src(), .{
-                .selected_index = @backingInt(picked),
-                .label = @tagName(picked),
-            }, .{ .gravity_y = 0.5 });
-            defer dd.deinit();
-
-            if (dd.dropped()) {
-                inline for (@typeInfo(types.AvatarColor).@"enum".field_names) |e| {
-                    const c: types.AvatarColor = @field(types.AvatarColor, e);
-
-                    var mi = dd.addChoice();
-                    defer mi.deinit();
-
-                    var sw = dvui.box(@src(), .{}, .{
-                        .min_size_content = .{ .w = 70, .h = 15 },
-                        .background = true,
-                        .color_fill = c.fill(),
-                        .expand = .both,
-                    });
-                    sw.deinit();
-
-                    if (mi.activeRect()) |_| {
-                        dd.close();
-                        picked = c;
-                        changed = true;
-                    }
-                }
-            }
+        if (colorDropdown(@src(), current_color, .{ .gravity_y = 0.5 })) |c| {
+            picked = c;
+            changed = true;
         }
 
         if (changed) {
@@ -143,7 +148,6 @@ pub fn render(s: *state.ProjectViewState, person_view: *?state.PersonViewState) 
         }
 
         dvui.labelNoFmt(@src(), pv.person_name, .{}, .{ .gravity_y = 0.5 });
-        // ... resto invariato
 
         if (dvui.buttonIcon(@src(), "Edit Name", dvui.entypo.edit, .{ .draw_focus = false }, .{}, .{ .gravity_y = 0.5 })) {
             pv.edit_name_dialog = !pv.edit_name_dialog;
