@@ -2,15 +2,13 @@ const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
 const types = @import("../types.zig");
-const grid = @import("../ui/grid.zig");
 const widgets = @import("../ui/widgets.zig");
-const notes_view = @import("../ui/notes_view.zig");
 const person_view = @import("person_view.zig");
 const timeline = @import("timeline.zig");
 const colors = @import("../ui/colors.zig");
+const notes_view = @import("notes.zig");
 
 const CARD_W_PEOPLE: f32 = 140;
-const CARD_SLOT_PEOPLE: f32 = CARD_W_PEOPLE + 12;
 const AVATAR_SIZE: f32 = 60;
 
 pub fn render(page: *state.PageState) !void {
@@ -247,45 +245,30 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
     var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
     defer scroll.deinit();
 
-    const cols = grid.colsFor(scroll.data().rect.w, CARD_SLOT_PEOPLE);
+    var flex = dvui.flexbox(@src(), .{ .justify_content = .start }, .{ .expand = .horizontal });
+    defer flex.deinit();
 
-    var i: usize = 0;
-    var row_idx: usize = 0;
-    var shown: usize = 0;
-    while (i < cv.people.items.len) : (row_idx += 1) {
-        while (i < cv.people.items.len and !widgets.matches(cv.people.items[i].name, grid_query)) i += 1;
-        if (i >= cv.people.items.len) break;
-        var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
-            .id_extra = row_idx,
-            .expand = .horizontal,
+    for (cv.people.items, 0..) |person, i| {
+        if (!widgets.matches(person.name, grid_query)) continue;
+
+        var card = dvui.box(@src(), .{ .dir = .vertical }, .{
+            .id_extra = i,
+            .min_size_content = .{ .w = CARD_W_PEOPLE },
         });
-        defer row.deinit();
+        defer card.deinit();
 
-        var c: usize = 0;
-        while (c < cols and i < cv.people.items.len) : (i += 1) {
-            const person = cv.people.items[i];
-            if (!widgets.matches(person.name, grid_query)) continue;
-            c += 1;
-            shown += 1;
-            const idx = i;
-
-            var card = dvui.box(@src(), .{ .dir = .vertical }, .{
-                .id_extra = idx,
-                .min_size_content = .{ .w = CARD_W_PEOPLE },
-            });
-            defer card.deinit();
-
-            const avatar = person.initials[0..person.initials_len];
-
-            if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .id_extra = idx, .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = .all(AVATAR_SIZE), .color_fill = person.color.fill() })) {
-                cv.person_view = state.PersonViewState.init(person, cv.case_id);
-            }
-
-            dvui.labelNoFmt(@src(), person.name, .{}, .{
-                .id_extra = idx,
-                .gravity_x = 0.5,
-                .max_size_content = .width(CARD_W_PEOPLE - 8.0),
-            });
+        if (dvui.button(@src(), person.initials[0..person.initials_len], .{ .draw_focus = false }, .{
+            .gravity_x = 0.5,
+            .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE },
+            .corners = .all(AVATAR_SIZE),
+            .color_fill = person.color.fill(),
+        })) {
+            cv.person_view = state.PersonViewState.init(person, cv.case_id);
         }
+
+        dvui.labelNoFmt(@src(), person.name, .{}, .{
+            .gravity_x = 0.5,
+            .max_size_content = .width(CARD_W_PEOPLE - 8.0),
+        });
     }
 }

@@ -88,7 +88,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
             } else {
                 try people.render(page);
             },
-            .notes => try notes.render(page),
+            .notes => try notes.render(&s.notes, s.db, s.allocator()),
             .relationships => try relationships.render(page),
         }
     }

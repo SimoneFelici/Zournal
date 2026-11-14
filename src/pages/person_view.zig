@@ -2,7 +2,7 @@ const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
 const types = @import("../types.zig");
-const notes_view = @import("../ui/notes_view.zig");
+const notes_view = @import("notes.zig");
 const colors = @import("../ui/colors.zig");
 
 const AVATAR_SIZE: f32 = 80;

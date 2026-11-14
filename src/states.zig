@@ -2,7 +2,7 @@ const std = @import("std");
 const types = @import("types.zig");
 const fs = @import("fs_utils.zig");
 const db_utils = @import("db_utils.zig");
-const notes_view = @import("ui/notes_view.zig");
+const notes_view = @import("pages/notes.zig");
 const AppContext = @import("context.zig").AppContext;
 
 pub const PageState = union(enum) {

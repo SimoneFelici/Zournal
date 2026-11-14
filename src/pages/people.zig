@@ -3,7 +3,6 @@ const dvui = @import("dvui");
 const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const types = @import("../types.zig");
-const grid = @import("../ui/grid.zig");
 const widgets = @import("../ui/widgets.zig");
 const colors = @import("../ui/colors.zig");
 
@@ -57,51 +56,36 @@ pub fn render(page: *state.PageState) !void {
 
     const query: []const u8 = if (search_open) widgets.searchEntry(@src()) else "";
 
+    // Icons Grid
     {
         var scroll = dvui.scrollArea(@src(), .{}, .{ .expand = .both });
         defer scroll.deinit();
 
-        const cols = grid.colsFor(scroll.data().rect.w, CARD_SLOT);
+        var flex = dvui.flexbox(@src(), .{ .justify_content = .start }, .{ .expand = .horizontal });
+        defer flex.deinit();
 
-        var i: usize = 0;
-        var row_idx: usize = 0;
-        var shown: usize = 0;
-        while (i < s.people.items.len) : (row_idx += 1) {
-            while (i < s.people.items.len and !widgets.matches(s.people.items[i].name, query)) i += 1;
-            if (i >= s.people.items.len) break;
+        for (s.people.items, 0..) |person, i| {
+            if (!widgets.matches(person.name, query)) continue;
 
-            var row = dvui.box(@src(), .{ .dir = .horizontal }, .{
-                .id_extra = row_idx,
-                .expand = .horizontal,
+            var card = dvui.box(@src(), .{ .dir = .vertical }, .{
+                .id_extra = i,
+                .min_size_content = .{ .w = CARD_W },
             });
-            defer row.deinit();
+            defer card.deinit();
 
-            var c: usize = 0;
-            while (c < cols and i < s.people.items.len) : (i += 1) {
-                const person = s.people.items[i];
-                if (!widgets.matches(person.name, query)) continue;
-                c += 1;
-                shown += 1;
-                const idx = i;
-
-                var card = dvui.box(@src(), .{ .dir = .vertical }, .{
-                    .id_extra = idx,
-                    .min_size_content = .{ .w = CARD_W },
-                });
-                defer card.deinit();
-
-                const avatar = person.initials[0..person.initials_len];
-
-                if (dvui.button(@src(), avatar, .{ .draw_focus = false }, .{ .id_extra = idx, .gravity_x = 0.5, .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE }, .corners = .all(AVATAR_SIZE), .color_fill = person.color.fill() })) {
-                    s.person_view = state.PersonViewState.init(person, null);
-                }
-
-                dvui.labelNoFmt(@src(), person.name, .{}, .{
-                    .id_extra = idx,
-                    .gravity_x = 0.5,
-                    .max_size_content = .width(CARD_W - 8.0),
-                });
+            if (dvui.button(@src(), person.initials[0..person.initials_len], .{ .draw_focus = false }, .{
+                .gravity_x = 0.5,
+                .min_size_content = .{ .w = AVATAR_SIZE, .h = AVATAR_SIZE },
+                .corners = .all(AVATAR_SIZE),
+                .color_fill = person.color.fill(),
+            })) {
+                s.person_view = state.PersonViewState.init(person, null);
             }
+
+            dvui.labelNoFmt(@src(), person.name, .{}, .{
+                .gravity_x = 0.5,
+                .max_size_content = .width(CARD_W - 8.0),
+            });
         }
     }
 }
