@@ -30,7 +30,7 @@ pub fn render(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
 
     if (renderConnectDialog(s, ts)) return;
     if (renderDeleteConnDialog(s, ts)) return;
-    renderEditDialog(s, ts);
+    try renderEditDialog(s, ts);
 }
 
 fn renderNewEventDialog(s: *state.ProjectViewState, cv: *state.CaseViewState, ts: *state.TimelineState) bool {
@@ -159,7 +159,7 @@ fn renderDeleteConnDialog(s: *state.ProjectViewState, ts: *state.TimelineState) 
     return false;
 }
 
-fn renderEditDialog(s: *state.ProjectViewState, ts: *state.TimelineState) void {
+fn renderEditDialog(s: *state.ProjectViewState, ts: *state.TimelineState) !void {
     const eid = ts.editing_id orelse return;
     const idx = eventIndex(ts.events.items, eid) orelse {
         ts.editing_id = null;
@@ -189,9 +189,9 @@ fn renderEditDialog(s: *state.ProjectViewState, ts: *state.TimelineState) void {
         defer top_row.deinit();
 
         {
-            var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
+            var te = dvui.textEntry(@src(), .{ .text_initial = ts.events.items[idx].label }, .{ .expand = .horizontal });
             defer te.deinit();
-            widgets.syncText(te, &ts.events.items[idx].label, allocator);
+            if (te.text_changed) ts.events.items[idx].label = try allocator.dupe(u8, te.textGet());
         }
 
         if (dvui.buttonIcon(@src(), "Delete Event", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .color_fill = colors.danger(), .gravity_y = 0.5 })) {
@@ -209,12 +209,12 @@ fn renderEditDialog(s: *state.ProjectViewState, ts: *state.TimelineState) void {
 
     // Content
     {
-        var te = dvui.textEntry(@src(), .{ .multiline = true }, .{
+        var te = dvui.textEntry(@src(), .{ .multiline = true, .text_initial = ts.events.items[idx].content }, .{
             .expand = .both,
             .min_size_content = .{ .w = 400, .h = 240 },
         });
         defer te.deinit();
-        widgets.syncText(te, &ts.events.items[idx].content, allocator);
+        if (te.text_changed) ts.events.items[idx].content = try allocator.dupe(u8, te.textGet());
     }
 }
 

@@ -187,9 +187,9 @@ pub fn render(
                 defer top_row.deinit();
 
                 {
-                    var te = dvui.textEntry(@src(), .{}, .{ .expand = .horizontal });
+                    var te = dvui.textEntry(@src(), .{ .text_initial = ns.notes.items[idx].title }, .{ .expand = .horizontal });
                     defer te.deinit();
-                    widgets.syncText(te, &ns.notes.items[idx].title, allocator);
+                    if (te.text_changed) ns.notes.items[idx].title = try allocator.dupe(u8, te.textGet());
                 }
 
                 if (ns.scopeCaseId()) |scope_case| {
@@ -218,12 +218,12 @@ pub fn render(
 
             // Content
             {
-                var te = dvui.textEntry(@src(), .{ .multiline = true }, .{
+                var te = dvui.textEntry(@src(), .{ .multiline = true, .text_initial = ns.notes.items[idx].content }, .{
                     .expand = .both,
                     .min_size_content = .{ .w = 380, .h = 250 },
                 });
                 defer te.deinit();
-                widgets.syncText(te, &ns.notes.items[idx].content, allocator);
+                if (te.text_changed) ns.notes.items[idx].content = try allocator.dupe(u8, te.textGet());
             }
             oi += 1;
         } else {
