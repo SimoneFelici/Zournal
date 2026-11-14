@@ -8,7 +8,6 @@ const notes = @import("notes.zig");
 const case_view = @import("case_view.zig");
 const person_view = @import("person_view.zig");
 const relationships = @import("relationships.zig");
-const colors = @import("../ui/colors.zig");
 
 pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
     var s = &page.project_view;
@@ -62,7 +61,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
             }
 
             // Back
-            if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = colors.danger(), .gravity_y = 1 })) {
+            if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = .{ .color = dvui.themeGet().color(.err, .fill) }, .gravity_y = 1 })) {
                 s.deinit();
                 page.* = .{ .project_select = state.ProjectSelectState.init(ctx.allocator) };
                 return .ok;

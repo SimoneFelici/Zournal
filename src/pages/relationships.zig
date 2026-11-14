@@ -2,7 +2,6 @@ const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
 const types = @import("../types.zig");
-const colors = @import("../ui/colors.zig");
 
 const NODE_SIZE: f32 = 60;
 const HALF: f32 = NODE_SIZE / 2;
@@ -37,7 +36,7 @@ pub fn render(page: *state.PageState) !void {
 
             dvui.Path.stroke(.{ .points = &.{ pt_a, pt_b } }, .{
                 .thickness = 2.0 * canvas_rs.s,
-                .color = colors.line(),
+                .color = .{ .color = dvui.themeGet().focus },
                 .closed = false,
             });
 
@@ -87,7 +86,7 @@ pub fn render(page: *state.PageState) !void {
                     .color_fill = person.color.fill(),
                     .border = if (is_selected) .all(3) else .all(0),
                     .margin = if (is_selected) .all(0) else .all(3),
-                    .color_border = colors.line(),
+                    .color_border = .{ .color = dvui.themeGet().focus },
                 });
                 defer circle.deinit();
                 dvui.labelNoFmt(@src(), avatar, .{}, .{ .gravity_x = 0.5, .gravity_y = 0.5 });
@@ -188,7 +187,7 @@ pub fn render(page: *state.PageState) !void {
                 rs.selected_id = null;
             }
 
-            if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = colors.primary() }) or enter) {
+            if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .style = .highlight }) or enter) {
                 if (label_text.len > 0) {
                     const id = s.db.createRelationship(rs.selected_id.?, rs.connect_target_id.?, label_text) catch |err| {
                         std.log.err("Create relationship failed: {}", .{err});
@@ -231,7 +230,7 @@ pub fn render(page: *state.PageState) !void {
                 rs.confirm_delete_conn_id = null;
             }
 
-            if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .color_fill_hover = colors.danger(), .gravity_x = 1 })) {
+            if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .color_fill_hover = .{ .color = dvui.themeGet().color(.err, .fill) }, .gravity_x = 1 })) {
                 s.db.deleteRelationship(conn_id) catch |err| {
                     std.log.err("Delete relationship failed: {}", .{err});
                 };

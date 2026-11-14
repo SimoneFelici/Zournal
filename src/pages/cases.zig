@@ -2,7 +2,6 @@ const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
 const widgets = @import("../ui/widgets.zig");
-const colors = @import("../ui/colors.zig");
 
 const CARD_W: f32 = 200;
 const CARD_H: f32 = 80;
@@ -20,7 +19,7 @@ pub fn render(page: *state.PageState) !void {
 
         search_open = widgets.searchToggle(@src());
 
-        if (dvui.buttonIcon(@src(), "New Case", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = colors.primary(), .gravity_x = 1 })) {
+        if (dvui.buttonIcon(@src(), "New Case", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .style = .highlight, .gravity_x = 1 })) {
             const id = s.db.createCase() catch |err| {
                 std.log.err("Create case failed: {}", .{err});
                 return;

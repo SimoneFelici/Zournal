@@ -5,7 +5,6 @@ const state = @import("../states.zig");
 const fs = @import("../fs_utils.zig");
 const db_utils = @import("../db_utils.zig");
 const people_page = @import("people.zig");
-const colors = @import("../ui/colors.zig");
 
 pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
     var s = &page.project_select;
@@ -103,7 +102,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
         }
 
         if (!s.new_project_dialog) {
-            if (dvui.button(@src(), "New Project", .{ .draw_focus = false }, .{ .color_fill = colors.primary(), .gravity_x = 1 })) {
+            if (dvui.button(@src(), "New Project", .{ .draw_focus = false }, .{ .style = .highlight, .gravity_x = 1 })) {
                 s.new_project_dialog = true;
             }
         }
@@ -125,7 +124,7 @@ pub fn render(ctx: *AppContext, page: *state.PageState) !dvui.App.Result {
                 s.new_project_dialog = false;
             }
 
-            if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = colors.primary(), .gravity_x = 1 }) or enter) {
+            if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .style = .highlight, .gravity_x = 1 }) or enter) {
                 if (name.len > 0) {
                     fs.createProject(ctx, name) catch |err| {
                         if (err == error.PathAlreadyExists) {

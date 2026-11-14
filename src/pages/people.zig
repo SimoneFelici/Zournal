@@ -4,7 +4,6 @@ const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const types = @import("../types.zig");
 const widgets = @import("../ui/widgets.zig");
-const colors = @import("../ui/colors.zig");
 
 const CARD_W: f32 = 140;
 const CARD_SLOT: f32 = CARD_W + 12;
@@ -21,7 +20,7 @@ pub fn render(page: *state.PageState) !void {
 
         search_open = widgets.searchToggle(@src());
 
-        if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = colors.primary(), .gravity_x = 1 })) {
+        if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .style = .highlight, .gravity_x = 1 })) {
             s.new_person_dialog = !s.new_person_dialog;
         }
     }
@@ -39,7 +38,7 @@ pub fn render(page: *state.PageState) !void {
             s.new_person_dialog = false;
         }
 
-        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = colors.primary() }) or enter) {
+        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .style = .highlight }) or enter) {
             if (name.len > 0) {
                 const id = s.db.createPerson(name) catch |err| {
                     std.log.err("Create person failed: {}", .{err});

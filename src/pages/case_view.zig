@@ -5,7 +5,6 @@ const types = @import("../types.zig");
 const widgets = @import("../ui/widgets.zig");
 const person_view = @import("person_view.zig");
 const timeline = @import("timeline.zig");
-const colors = @import("../ui/colors.zig");
 const notes_view = @import("notes.zig");
 
 const CARD_W_PEOPLE: f32 = 140;
@@ -34,7 +33,7 @@ pub fn render(page: *state.PageState) !void {
                 cv.rename_dialog = !cv.rename_dialog;
                 cv.delete_case_confirm = false;
             }
-            if (dvui.buttonIcon(@src(), "Delete Case", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .color_fill = colors.danger() })) {
+            if (dvui.buttonIcon(@src(), "Delete Case", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .style = .err })) {
                 cv.delete_case_confirm = !cv.delete_case_confirm;
                 cv.rename_dialog = false;
             }
@@ -50,7 +49,7 @@ pub fn render(page: *state.PageState) !void {
             const enter = te.enter_pressed;
             te.deinit();
 
-            if (enter or dvui.button(@src(), "Save", .{ .draw_focus = false }, .{ .color_fill = colors.primary(), .expand = .horizontal })) {
+            if (enter or dvui.button(@src(), "Save", .{ .draw_focus = false }, .{ .style = .highlight, .expand = .horizontal })) {
                 if (new_name.len > 0) {
                     s.db.renameCase(cv.case_id, new_name) catch |err| {
                         std.log.err("Rename case failed: {}", .{err});
@@ -75,7 +74,7 @@ pub fn render(page: *state.PageState) !void {
                 cv.delete_case_confirm = false;
             }
 
-            if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill = colors.danger() })) {
+            if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .expand = .horizontal, .style = .err })) {
                 s.db.deleteCase(cv.case_id) catch |err| {
                     std.log.err("Delete case failed: {}", .{err});
                     return;
@@ -118,7 +117,7 @@ pub fn render(page: *state.PageState) !void {
                 }
             }
 
-            if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = colors.danger(), .gravity_y = 1 })) {
+            if (dvui.button(@src(), "Back", .{ .draw_focus = false }, .{ .expand = .horizontal, .color_fill_hover = .{ .color = dvui.themeGet().color(.err, .fill) }, .gravity_y = 1 })) {
                 s.db.updateCaseAccess(cv.case_id) catch {};
                 cv.flushNotes(s.db);
                 s.case_view = null;
@@ -166,7 +165,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
 
         grid_search_open = widgets.searchToggle(@src());
 
-        if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = colors.primary(), .gravity_x = 1 })) {
+        if (dvui.buttonIcon(@src(), "New Person", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .style = .highlight, .gravity_x = 1 })) {
             cv.new_person_dialog = !cv.new_person_dialog;
             cv.import_person_dialog = false;
         }
@@ -185,7 +184,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
             cv.new_person_dialog = false;
         }
 
-        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = colors.primary() }) or enter) {
+        if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .style = .highlight }) or enter) {
             if (name.len > 0) {
                 const id = s.db.createPersonInCase(name, cv.case_id) catch |err| {
                     std.log.err("Create person in case failed: {}", .{err});

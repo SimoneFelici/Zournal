@@ -3,7 +3,6 @@ const dvui = @import("dvui");
 const state = @import("../states.zig");
 const types = @import("../types.zig");
 const widgets = @import("../ui/widgets.zig");
-const colors = @import("../ui/colors.zig");
 
 const NODE_MIN_W: f32 = 80.0;
 const NODE_MAX_W: f32 = 220.0;
@@ -19,7 +18,7 @@ pub fn render(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
         var top = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
         defer top.deinit();
 
-        if (dvui.buttonIcon(@src(), "New Event", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .color_fill = colors.primary(), .gravity_x = 1 })) {
+        if (dvui.buttonIcon(@src(), "New Event", dvui.entypo.plus, .{ .draw_focus = false }, .{}, .{ .style = .highlight, .gravity_x = 1 })) {
             ts.new_event_dialog = !ts.new_event_dialog;
         }
     }
@@ -49,7 +48,7 @@ fn renderNewEventDialog(s: *state.ProjectViewState, cv: *state.CaseViewState, ts
         ts.new_event_dialog = false;
     }
 
-    if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .color_fill = colors.primary() }) or enter) {
+    if (dvui.button(@src(), "Create", .{ .draw_focus = false }, .{ .style = .highlight }) or enter) {
         if (title.len > 0) {
             const n = ts.events.items.len;
             const nx = 50.0 + @as(f32, @floatFromInt(n % 4)) * (NODE_MAX_W + 40.0);
@@ -108,7 +107,7 @@ fn renderConnectDialog(s: *state.ProjectViewState, ts: *state.TimelineState) boo
         ts.selected_id = null;
     }
 
-    if (dvui.button(@src(), "Connect", .{ .draw_focus = false }, .{ .color_fill = colors.primary() }) or enter) {
+    if (dvui.button(@src(), "Connect", .{ .draw_focus = false }, .{ .style = .highlight }) or enter) {
         const id = s.db.createEventConnection(ts.selected_id.?, ts.connect_target_id.?, conn_type) catch |err| {
             std.log.err("Create connection failed: {}", .{err});
             return true;
@@ -148,7 +147,7 @@ fn renderDeleteConnDialog(s: *state.ProjectViewState, ts: *state.TimelineState) 
         ts.confirm_delete_conn_id = null;
     }
 
-    if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .color_fill_hover = colors.danger(), .gravity_x = 1 })) {
+    if (dvui.button(@src(), "Delete", .{ .draw_focus = false }, .{ .color_fill_hover = .{ .color = dvui.themeGet().color(.err, .fill) }, .gravity_x = 1 })) {
         s.db.deleteEventConnection(conn_id) catch |err| {
             std.log.err("Delete connection failed: {}", .{err});
         };
@@ -194,7 +193,7 @@ fn renderEditDialog(s: *state.ProjectViewState, ts: *state.TimelineState) !void 
             if (te.text_changed) ts.events.items[idx].label = try allocator.dupe(u8, te.textGet());
         }
 
-        if (dvui.buttonIcon(@src(), "Delete Event", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .color_fill = colors.danger(), .gravity_y = 0.5 })) {
+        if (dvui.buttonIcon(@src(), "Delete Event", dvui.entypo.trash, .{ .draw_focus = false }, .{}, .{ .style = .err, .gravity_y = 0.5 })) {
             s.db.deleteTimelineEvent(eid) catch |err| {
                 std.log.err("Delete event failed: {}", .{err});
                 return;
@@ -245,7 +244,7 @@ fn renderEdges(ts: *state.TimelineState, canvas_rs: dvui.RectScale) void {
 
         dvui.Path.stroke(.{ .points = &.{ pt_a, pt_b } }, .{
             .thickness = 2.0 * canvas_rs.s,
-            .color = colors.line(),
+            .color = .{ .color = dvui.themeGet().focus },
             .closed = false,
         });
 
@@ -282,7 +281,7 @@ fn renderNode(s: *state.ProjectViewState, ts: *state.TimelineState, evt: *types.
         .corners = .all(3),
         .border = if (is_selected) .all(3) else .all(0),
         .margin = if (is_selected) .all(0) else .all(3),
-        .color_border = colors.line(),
+        .color_border = .{ .color = dvui.themeGet().focus },
     });
     defer node.deinit();
 
