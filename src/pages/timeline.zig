@@ -3,6 +3,7 @@ const dvui = @import("dvui");
 const state = @import("../states.zig");
 const types = @import("../types.zig");
 const db_utils = @import("../db_utils.zig");
+const canvas = @import("../ui/canvas.zig");
 
 const NODE_MIN_W: f32 = 80.0;
 const NODE_MAX_W: f32 = 220.0;
@@ -183,10 +184,10 @@ fn renderEditDialog(s: *state.ProjectViewState, ts: *state.TimelineState) !void 
 }
 
 fn renderCanvas(s: *state.ProjectViewState, ts: *state.TimelineState) void {
-    var canvas = dvui.box(@src(), .{}, .{ .expand = .both });
-    defer canvas.deinit();
+    var c = canvas.begin(@src());
+    defer c.end();
 
-    const canvas_rs = canvas.data().contentRectScale();
+    const canvas_rs = c.rectScale();
 
     renderEdges(ts, canvas_rs);
 
@@ -275,10 +276,9 @@ fn renderNode(s: *state.ProjectViewState, ts: *state.TimelineState, evt: *types.
                 if (dvui.dragging(me, null)) |dps| {
                     e.handle(@src(), node.data());
                     const dp = dps.scale(1.0 / canvas_rs.s, dvui.Point);
-                    const cw = canvas_rs.r.w / canvas_rs.s;
-                    const ch = canvas_rs.r.h / canvas_rs.s;
-                    evt.x = @max(0.0, @min(evt.x + dp.x, cw - nw));
-                    evt.y = @max(0.0, @min(evt.y + dp.y, ch - NODE_HALF_H * 2.0 - 10.0));
+                    evt.x = @max(0.0, @min(evt.x + dp.x, canvas.SIZE.w - nw));
+                    evt.y = @max(0.0, @min(evt.y + dp.y, canvas.SIZE.h - NODE_HALF_H * 2.0 - 10.0));
+                    dvui.scrollDrag(.{ .mouse_pt = me.p, .screen_rect = node.data().rectScale().r });
                 }
             },
             .position => dvui.cursorSet(.hand),

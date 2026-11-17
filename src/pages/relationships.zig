@@ -3,6 +3,7 @@ const dvui = @import("dvui");
 const state = @import("../states.zig");
 const types = @import("../types.zig");
 const db_utils = @import("../db_utils.zig");
+const canvas = @import("../ui/canvas.zig");
 
 const NODE_SIZE: f32 = 60;
 const HALF: f32 = NODE_SIZE / 2;
@@ -22,10 +23,10 @@ pub fn render(page: *state.PageState) !void {
     try rs.load(s.db, s.people.items, allocator);
 
     {
-        var canvas = dvui.box(@src(), .{}, .{ .expand = .both });
-        defer canvas.deinit();
+        var c = canvas.begin(@src());
+        defer c.end();
 
-        const canvas_rs = canvas.data().contentRectScale();
+        const canvas_rs = c.rectScale();
 
         // Edges
         for (rs.relationships.items, 0..) |rel, ri| {
@@ -123,12 +124,9 @@ pub fn render(page: *state.PageState) !void {
                                 if (dvui.dragging(me, null)) |dps| {
                                     e.handle(@src(), node.data());
                                     const dp = dps.scale(1 / canvas_rs.s, dvui.Point);
-                                    pos.x += dp.x;
-                                    pos.y += dp.y;
-                                    const cw = canvas_rs.r.w / canvas_rs.s;
-                                    const ch = canvas_rs.r.h / canvas_rs.s;
-                                    pos.x = @max(off, @min(pos.x, cw - nw + off));
-                                    pos.y = @max(0.0, @min(pos.y, ch - NODE_SIZE - 24.0));
+                                    pos.x = @max(off, @min(pos.x + dp.x, canvas.SIZE.w - nw + off));
+                                    pos.y = @max(0.0, @min(pos.y + dp.y, canvas.SIZE.h - NODE_SIZE - 24.0));
+                                    dvui.scrollDrag(.{ .mouse_pt = me.p, .screen_rect = node.data().rectScale().r });
                                 }
                             }
                         },

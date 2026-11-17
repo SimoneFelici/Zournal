@@ -22,13 +22,17 @@ pub fn render(page: *state.PageState) !void {
 
     // Sidebar
     {
-        var sidebar = dvui.box(@src(), .{ .dir = .vertical }, .{ .expand = .vertical });
+        var sidebar = dvui.box(@src(), .{ .dir = .vertical }, .{
+            .expand = .vertical,
+            .min_size_content = .{ .w = 180 },
+            .max_size_content = .{ .w = 180, .h = std.math.floatMax(f32) },
+        });
         defer sidebar.deinit();
 
         {
             var name_row = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
             defer name_row.deinit();
-            dvui.label(@src(), "{s}", .{cv.case_name}, .{ .gravity_y = 0.5 });
+            dvui.labelNoFmt(@src(), cv.case_name, .{}, .{ .gravity_y = 0.5, .max_size_content = .width(110) });
             if (dvui.buttonIcon(@src(), "Rename", dvui.entypo.edit, .{ .draw_focus = false }, .{}, .{})) {
                 cv.rename_dialog = !cv.rename_dialog;
             }
