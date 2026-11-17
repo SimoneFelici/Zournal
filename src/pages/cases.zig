@@ -1,7 +1,6 @@
 const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
-const widgets = @import("../ui/widgets.zig");
 
 const CARD_W: f32 = 200;
 const CARD_H: f32 = 80;
@@ -40,7 +39,7 @@ pub fn render(page: *state.PageState) !void {
         defer flex.deinit();
 
         for (s.cases.items, 0..) |case_entry, i| {
-            if (!widgets.matches(case_entry.name, query)) continue;
+            if (std.ascii.findIgnoreCase(case_entry.name, query) == null) continue;
             if (dvui.button(@src(), case_entry.name, .{ .draw_focus = false }, .{
                 .id_extra = i,
                 .min_size_content = .{ .w = CARD_W, .h = CARD_H },

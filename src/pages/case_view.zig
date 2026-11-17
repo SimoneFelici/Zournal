@@ -2,7 +2,6 @@ const std = @import("std");
 const dvui = @import("dvui");
 const state = @import("../states.zig");
 const types = @import("../types.zig");
-const widgets = @import("../ui/widgets.zig");
 const person_view = @import("person_view.zig");
 const timeline = @import("timeline.zig");
 const notes_view = @import("notes.zig");
@@ -206,7 +205,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
 
         for (s.people.items, 0..) |person, i| {
             if (std.mem.findScalar(i64, cv.person_ids.items, person.id) != null) continue;
-            if (!widgets.matches(person.name, query)) continue;
+            if (std.ascii.findIgnoreCase(person.name, query) == null) continue;
 
             if (dvui.button(@src(), person.name, .{ .draw_focus = false }, .{
                 .id_extra = i,
@@ -229,7 +228,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
 
     for (s.people.items, 0..) |person, i| {
         if (std.mem.findScalar(i64, cv.person_ids.items, person.id) == null) continue;
-        if (!widgets.matches(person.name, grid_query)) continue;
+        if (std.ascii.findIgnoreCase(person.name, grid_query) == null) continue;
 
         var card = dvui.box(@src(), .{ .dir = .vertical }, .{
             .id_extra = i,

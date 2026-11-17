@@ -2,7 +2,6 @@ const std = @import("std");
 const dvui = @import("dvui");
 const types = @import("../types.zig");
 const db_utils = @import("../db_utils.zig");
-const widgets = @import("../ui/widgets.zig");
 
 pub const NoteScope = db_utils.NoteScope;
 
@@ -125,7 +124,7 @@ pub fn render(
         defer flex.deinit();
 
         for (ns.notes.items) |note| {
-            if (!widgets.matches(note.title, query)) continue;
+            if (std.ascii.findIgnoreCase(note.title, query) == null) continue;
             if (dvui.button(@src(), note.title, .{ .draw_focus = false }, .{
                 .id_extra = @intCast(note.id),
                 .min_size_content = .{ .w = CARD_W, .h = CARD_H },

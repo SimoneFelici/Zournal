@@ -3,7 +3,6 @@ const dvui = @import("dvui");
 const AppContext = @import("../context.zig").AppContext;
 const state = @import("../states.zig");
 const types = @import("../types.zig");
-const widgets = @import("../ui/widgets.zig");
 
 const CARD_W: f32 = 140;
 const CARD_SLOT: f32 = CARD_W + 12;
@@ -64,7 +63,7 @@ pub fn render(page: *state.PageState) !void {
         defer flex.deinit();
 
         for (s.people.items, 0..) |person, i| {
-            if (!widgets.matches(person.name, query)) continue;
+            if (std.ascii.findIgnoreCase(person.name, query) == null) continue;
 
             var card = dvui.box(@src(), .{ .dir = .vertical }, .{
                 .id_extra = i,
