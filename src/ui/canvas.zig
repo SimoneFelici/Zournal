@@ -87,6 +87,6 @@ pub fn begin(src: std.builtin.SourceLocation) Canvas {
     const area = dvui.scrollArea(src, .{ .horizontal = .auto, .vertical_bar = .hide, .horizontal_bar = .hide }, .{ .expand = .both, .style = .content });
     const scale = dvui.dataGetPtrDefault(null, area.data().id, "scale", f32, 1.0);
     const scaler = dvui.scale(@src(), .{ .scale = scale }, .{});
-    const box = dvui.box(@src(), .{}, .{ .min_size_content = SIZE, .margin = .all(MARGIN), .background = true, .style = .window });
+    const box = dvui.box(@src(), .{}, .{ .min_size_content = SIZE, .margin = .all(MARGIN), .background = true, .style = .window, .corners = .all(3) });
     return .{ .scale = scale, .area = area, .scaler = scaler, .box = box };
 }
