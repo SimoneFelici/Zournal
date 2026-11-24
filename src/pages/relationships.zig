@@ -23,7 +23,7 @@ pub fn render(page: *state.PageState) !void {
     try rs.load(s.db, s.people.items, allocator);
 
     {
-        var c = canvas.begin(@src());
+        var c = canvas.begin(@src(), &rs.view);
         defer c.end();
 
         const canvas_rs = c.rectScale();

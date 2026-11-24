@@ -184,7 +184,7 @@ fn renderEditDialog(s: *state.ProjectViewState, ts: *state.TimelineState) !void 
 }
 
 fn renderCanvas(s: *state.ProjectViewState, ts: *state.TimelineState) void {
-    var c = canvas.begin(@src());
+    var c = canvas.begin(@src(), &ts.view);
     defer c.end();
 
     const canvas_rs = c.rectScale();

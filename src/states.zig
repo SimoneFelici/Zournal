@@ -4,6 +4,7 @@ const fs = @import("fs_utils.zig");
 const db_utils = @import("db_utils.zig");
 const notes_view = @import("pages/notes.zig");
 const AppContext = @import("context.zig").AppContext;
+const canvas = @import("ui/canvas.zig");
 
 pub const PageState = union(enum) {
     project_select: ProjectSelectState,
@@ -130,6 +131,7 @@ pub const PersonViewState = struct {
 };
 
 pub const RelationshipsState = struct {
+    view: canvas.View = .{},
     relationships: std.ArrayList(types.RelationshipEntry) = .empty,
     positions: std.ArrayList(types.NodePos) = .empty,
     selected_id: ?i64 = null,
@@ -158,6 +160,7 @@ pub const RelationshipsState = struct {
 };
 
 pub const TimelineState = struct {
+    view: canvas.View = .{},
     events: std.ArrayList(types.TimelineEvent) = .empty,
     connections: std.ArrayList(types.EventConnection) = .empty,
     selected_id: ?i64 = null,

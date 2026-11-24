@@ -8,6 +8,11 @@ const MIN_ZOOM: f32 = 0.25;
 const MAX_ZOOM: f32 = 4.0;
 const ZOOM_STEP: f32 = 1.0025;
 
+pub const View = struct {
+    scroll: dvui.ScrollInfo = .{ .vertical = .auto, .horizontal = .auto },
+    scale: f32 = 1.0,
+};
+
 pub const Canvas = struct {
     scale: *f32,
     area: *dvui.ScrollAreaWidget,
@@ -83,10 +88,9 @@ pub const Canvas = struct {
     }
 };
 
-pub fn begin(src: std.builtin.SourceLocation) Canvas {
-    const area = dvui.scrollArea(src, .{ .horizontal = .auto, .vertical_bar = .hide, .horizontal_bar = .hide }, .{ .expand = .both, .style = .content });
-    const scale = dvui.dataGetPtrDefault(null, area.data().id, "scale", f32, 1.0);
-    const scaler = dvui.scale(@src(), .{ .scale = scale }, .{});
+pub fn begin(src: std.builtin.SourceLocation, view: *View) Canvas {
+    const area = dvui.scrollArea(src, .{ .scroll_info = &view.scroll, .vertical_bar = .hide, .horizontal_bar = .hide }, .{ .expand = .both, .style = .content });
+    const scaler = dvui.scale(@src(), .{ .scale = &view.scale }, .{});
     const box = dvui.box(@src(), .{}, .{ .min_size_content = SIZE, .margin = .all(MARGIN), .background = true, .style = .window, .corners = .all(3) });
-    return .{ .scale = scale, .area = area, .scaler = scaler, .box = box };
+    return .{ .scale = &view.scale, .area = area, .scaler = scaler, .box = box };
 }
