@@ -153,7 +153,7 @@ pub fn render(
             });
             defer fw.deinit();
 
-            fw.dragAreaSet(dvui.windowHeader("Edit Note", "", &show));
+            fw.dragAreaSet(dvui.windowHeader(.{ .title = "Edit Note", .open_flag = &show }));
 
             if (!show) {
                 db.saveNote(note_id, ns.notes.items[idx].title, ns.notes.items[idx].content) catch |err| {

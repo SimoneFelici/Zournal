@@ -36,7 +36,11 @@ pub fn render(page: *state.PageState) !void {
             const pt_a = canvas_rs.pointToPhysical(.{ .x = pos_a.x + HALF, .y = pos_a.y + HALF });
             const pt_b = canvas_rs.pointToPhysical(.{ .x = pos_b.x + HALF, .y = pos_b.y + HALF });
 
-            dvui.Path.stroke(.{ .points = &.{ pt_a, pt_b } }, .{
+            const edge: dvui.Path = .{
+                .start = pt_a,
+                .segments = &.{.{ .line = .{ pt_b.x, pt_b.y } }},
+            };
+            dvui.Path.stroke(&.{edge}, .{
                 .thickness = 2.0 * canvas_rs.s,
                 .color = .{ .color = dvui.themeGet().focus },
             });
@@ -156,7 +160,7 @@ pub fn render(page: *state.PageState) !void {
         });
         defer fw.deinit();
 
-        fw.dragAreaSet(dvui.windowHeader("New Relationship", "", &show));
+        fw.dragAreaSet(dvui.windowHeader(.{ .title = "New Relationship", .open_flag = &show }));
 
         if (!show) {
             rs.connect_target_id = null;

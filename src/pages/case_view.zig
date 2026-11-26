@@ -189,7 +189,7 @@ fn renderPeople(s: *state.ProjectViewState, cv: *state.CaseViewState) !void {
         });
         defer fw.deinit();
 
-        fw.dragAreaSet(dvui.windowHeader("Import Person", "", &show));
+        fw.dragAreaSet(dvui.windowHeader(.{ .title = "Import Person", .open_flag = &show }));
 
         if (!show) {
             cv.import_person_dialog = false;

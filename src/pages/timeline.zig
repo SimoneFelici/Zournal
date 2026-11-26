@@ -84,7 +84,7 @@ fn renderConnectDialog(s: *state.ProjectViewState, ts: *state.TimelineState) !bo
     });
     defer fw.deinit();
 
-    fw.dragAreaSet(dvui.windowHeader("New Connection", "", &show));
+    fw.dragAreaSet(dvui.windowHeader(.{ .title = "New Connection", .open_flag = &show }));
 
     if (!show) {
         ts.connect_target_id = null;
@@ -139,7 +139,7 @@ fn renderEditDialog(s: *state.ProjectViewState, ts: *state.TimelineState) !void 
     });
     defer fw.deinit();
 
-    fw.dragAreaSet(dvui.windowHeader("Edit Event", "", &show));
+    fw.dragAreaSet(dvui.windowHeader(.{ .title = "Edit Event", .open_flag = &show }));
 
     if (!show) {
         saveEvent(s, ts.events.items[idx]);
@@ -208,7 +208,11 @@ fn renderEdges(ts: *state.TimelineState, canvas_rs: dvui.RectScale) void {
         const pt_a = canvas_rs.pointToPhysical(.{ .x = cx_a, .y = evt_a.y + NODE_HALF_H });
         const pt_b = canvas_rs.pointToPhysical(.{ .x = cx_b, .y = evt_b.y + NODE_HALF_H });
 
-        dvui.Path.stroke(.{ .points = &.{ pt_a, pt_b } }, .{
+        const line: dvui.Path = .{
+            .start = pt_a,
+            .segments = &.{.{ .line = .{ pt_b.x, pt_b.y } }},
+        };
+        dvui.Path.stroke(&.{line}, .{
             .thickness = 2.0 * canvas_rs.s,
             .color = .{ .color = dvui.themeGet().focus },
         });
